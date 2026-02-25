@@ -197,15 +197,14 @@
         display: inline-block;
         min-height: 400px;
     }
-
+    
     #banner-image {
         width: 90%;
-        max-width: 900px;
+        max-width: 1000px;
+        height: auto;
         border-radius: 15px;
         box-shadow: 0 0 25px rgba(255,255,255,0.2);
         display: block;
-        height: 400px;
-        object-fit: cover;
     }
 
     /* Left and Right Base */
@@ -379,28 +378,28 @@
         { name:"Mutual Demise", rarity:3, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/a/a0/Light_Cone_Mutual_Demise.png" }
     ];
 
-const lightcones4 = [
-    { name:"Only Silence Remains", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/e/e2/Light_Cone_Only_Silence_Remains.png" },
-    { name:"Swordplay", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b9/Light_Cone_Swordplay.png" },
-    { name:"River Flows in Spring", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b3/Light_Cone_River_Flows_in_Spring.png" },
-    { name:"For Tomorrow's Journey", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/a/aa/Light_Cone_For_Tomorrow%27s_Journey.png" },
-    { name:"Subscribe for More!", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/5/57/Light_Cone_Subscribe_for_More%21.png" },
-    { name:"Geniuses' Repose", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b9/Light_Cone_Geniuses%27_Repose.png" },
-    { name:"Memories of the Past", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/1/15/Light_Cone_Memories_of_the_Past.png" },
-    { name:"The Moles Welcome You", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/5/5a/Light_Cone_The_Moles_Welcome_You.png" },
-    { name:"Planetary Rendezvous", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b0/Light_Cone_Planetary_Rendezvous.png" },
-    { name:"Dance! Dance! Dance!", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/6/64/Light_Cone_Dance%21_Dance%21_Dance%21.png" },
-    { name:"Carve the Moon, Weave the Clouds", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/1/1f/Light_Cone_Carve_the_Moon%2C_Weave_the_Clouds.png" },
-    { name:"Shared Feeling", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/3/35/Light_Cone_Shared_Feeling.png" },
-    { name:"Post-Op Conversation", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/0/03/Light_Cone_Post-Op_Conversation.png" },
-    { name:"Perfect Timing", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/77/Light_Cone_Perfect_Timing.png" },
-    { name:"Quid Pro Quo", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/71/Light_Cone_Quid_Pro_Quo.png" },
-    { name:"Trend of the Universal Market", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/8/8a/Light_Cone_Trend_of_the_Universal_Market.png" },
-    { name:"Landau's Choice", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b7/Light_Cone_Landau%27s_Choice.png" },
-    { name:"Day One of My New Life", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/6/61/Light_Cone_Day_One_of_My_New_Life.png" },
-    { name:"This Is Me!", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/c/cb/Light_Cone_This_Is_Me%21.png" },
-    { name:"We Are Wildfire", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/c/c2/Light_Cone_We_Are_Wildfire.png" }
-];
+    const lightcones4 = [
+        { name:"Only Silence Remains", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/e/e2/Light_Cone_Only_Silence_Remains.png" },
+        { name:"Swordplay", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b9/Light_Cone_Swordplay.png" },
+        { name:"River Flows in Spring", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b3/Light_Cone_River_Flows_in_Spring.png" },
+        { name:"For Tomorrow's Journey", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/a/aa/Light_Cone_For_Tomorrow%27s_Journey.png" },
+        { name:"Subscribe for More!", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/5/57/Light_Cone_Subscribe_for_More%21.png" },
+        { name:"Geniuses' Repose", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b9/Light_Cone_Geniuses%27_Repose.png" },
+        { name:"Memories of the Past", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/1/15/Light_Cone_Memories_of_the_Past.png" },
+        { name:"The Moles Welcome You", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/5/5a/Light_Cone_The_Moles_Welcome_You.png" },
+        { name:"Planetary Rendezvous", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b0/Light_Cone_Planetary_Rendezvous.png" },
+        { name:"Dance! Dance! Dance!", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/6/64/Light_Cone_Dance%21_Dance%21_Dance%21.png" },
+        { name:"Carve the Moon, Weave the Clouds", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/1/1f/Light_Cone_Carve_the_Moon%2C_Weave_the_Clouds.png" },
+        { name:"Shared Feeling", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/3/35/Light_Cone_Shared_Feeling.png" },
+        { name:"Post-Op Conversation", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/0/03/Light_Cone_Post-Op_Conversation.png" },
+        { name:"Perfect Timing", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/77/Light_Cone_Perfect_Timing.png" },
+        { name:"Quid Pro Quo", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/71/Light_Cone_Quid_Pro_Quo.png" },
+        { name:"Trend of the Universal Market", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/8/8a/Light_Cone_Trend_of_the_Universal_Market.png" },
+        { name:"Landau's Choice", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b7/Light_Cone_Landau%27s_Choice.png" },
+        { name:"Day One of My New Life", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/6/61/Light_Cone_Day_One_of_My_New_Life.png" },
+        { name:"This Is Me!", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/c/cb/Light_Cone_This_Is_Me%21.png" },
+        { name:"We Are Wildfire", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/c/c2/Light_Cone_We_Are_Wildfire.png" }
+    ];
 
     // const limited5 = [
     //     { name:"Acheron", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/78/Character_Acheron_Splash_Art.png" },
@@ -709,3 +708,4 @@ const lightcones4 = [
 
 </body>
 </html>
+
