@@ -3,129 +3,466 @@
 <head>
 <meta charset="UTF-8">
 <title>HSR Warp Simulator</title>
+
 <style>
-    body { font-family: Arial; background:#111; color:white; text-align:center; }
-    .banner-select { margin:20px; }
-    button { padding:10px 20px; margin:10px; font-size:16px; }
-    #result-area { margin-top:25px; font-size:20px; min-height:80px; }
-    #history { margin-top:20px; max-width:600px; margin:auto; background:#222; padding:15px; border-radius:10px; }
-    .item { margin:4px 0; }
-    .animate {
-        animation: warp 0.6s ease-in-out;
+    body {
+        font-family: Arial;
+        background: #0d0d0d;
+        color: white;
+        text-align: center;
+        overflow-x: hidden;
+        margin: 0;
     }
-    @keyframes warp {
-        0% { opacity:0; transform:scale(0.5); }
-        100% { opacity:1; transform:scale(1); }
+
+    h1 { margin-top: 20px; }
+
+    select, button {
+        padding: 10px 15px;
+        margin: 10px;
+        font-size: 16px;
+    }
+
+    /* Pull reveal container */
+    #pull-container {
+        margin-top: 25px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        min-height: 200px;
+        z-index: 100;
+        position: relative;
+    }
+
+    /* Sliding items */
+    .pull-item {
+        width: 260px;
+        padding: 10px;
+        background: #222;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        opacity: 0;
+        transform: translateX(-300px);
+        transition: all 0.4s ease;
+        gap: 10px;
+        border: 2px solid #333;
+    }
+
+    .pull-item img {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+    }
+
+    .pull-item.show {
+        opacity: 1;
+        transform: translateX(0px);
+    }
+
+    /* Color borders based on rarity */
+    .r3 { border-color: #4aa3ff; }
+    .r4 { border-color: #c55bff; }
+    .r5 { border-color: #ffcc33; }
+
+    /* Warp screen overlay animation */
+    #warp-screen {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+    }
+
+    #warp-screen.active {
+        opacity: 1;
+    }
+
+    #ticket {
+        width: 140px;
+        height: 140px;
+        background: url('https://static.wikia.nocookie.net/houkai-star-rail/images/4/48/Enemy_Trotter_of_Destruction.png/revision/latest?cb=20230509070434') no-repeat center;
+        background-size: contain;
+        animation: spin 1s linear infinite;
+        opacity: 0;
+    }
+
+    #ticket.show {
+        opacity: 1;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg) scale(1); }
+        100% { transform: rotate(360deg) scale(1); }
+    }
+
+    /* Flash colors */
+    .gold-flash { background: radial-gradient(circle, #ffdd66, #c48c00); }
+    .purple-flash { background: radial-gradient(circle, #d29aff, #5e2d91); }
+    .blue-flash { background: radial-gradient(circle, #7abaff, #1d3d66); }
+
+    /* Collection page */
+    #collection-box {
+        margin-top: 40px;
+        background: #1a1a1a;
+        padding: 20px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 700px;
+        margin: 40px auto;
+        display: none;
+        text-align: left;
+    }
+
+    .collection-entry {
+        margin: 8px 0;
+        padding: 10px;
+        background: #222;
+        border-radius: 8px;
+    }
+
+        /* Right Sidebar */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        right: -350px;
+        width: 350px;
+        height: 100vh;
+        background: #141414;
+        border-left: 2px solid #333;
+        box-shadow: -4px 0 10px rgba(0,0,0,0.7);
+        transition: right 0.35s ease;
+        padding: 20px;
+        overflow-y: auto;
+        z-index: 99999;
+    }
+
+    #sidebar.active {
+        right: 0;
+    }
+
+    #sidebar-close {
+        font-size: 22px;
+        cursor: pointer;
+        margin-bottom: 15px;
+        text-align: right;
+    }
+
+    .section-title {
+        margin-top: 15px;
+        font-size: 18px;
+        border-bottom: 1px solid #444;
+        padding-bottom: 5px;
     }
 </style>
+
 </head>
 <body>
 
 <h1>HSR Warp Simulator</h1>
 
-<!-- Banner Selection -->
-<div class="banner-select">
+<!-- Banner selection -->
+<div>
     <label><strong>Select Banner:</strong></label><br>
     <select id="banner">
         <option value="standard">Standard Banner</option>
-        <option value="limited">Limited Banner</option>
+        <option value="limited">Limited Character Banner</option>
     </select>
 </div>
 
-<!-- Pull Buttons -->
-<button onclick="pull(1)">Single Pull</button>
-<button onclick="pull(10)">10 Pull</button>
+<button onclick="warp(1)">Single Pull</button>
+<button onclick="warp(10)">10 Pull</button>
+<button onclick="openSidebar('collection')">Collection</button>
+<button onclick="openSidebar('history')">History</button>
 
-<div id="result-area"></div>
+<!-- Sidebar Panel -->
+<div id="sidebar">
+    <div id="sidebar-close" onclick="closeSidebar()">✖</div>
+    <div id="sidebar-content"></div>
+</div>
 
-<h2>Pull History</h2>
-<div id="history"></div>
+<!-- Warp animation overlay -->
+<div id="warp-screen">
+    <div id="ticket"></div>
+</div>
+
+<!-- Pull results -->
+<div id="pull-container"></div>
+
+<!-- Collection -->
+<div id="collection-box"></div>
 
 <script>
-// ----------------------------
-// Banner Pools
-// ----------------------------
+    let historyStandard = [];
+    let historyLimited = [];
 
-// Standard banner characters
-const standardCharacters = [
-    "Welt", "Himeko", "Gepard", "Yanqing",
-    "Asta", "Serval", "Pela", "Natasha"
-];
+    // Rates (approx HSR)
+    const rates = {
+        r5: 0.006,
+        r4: 0.051,
+        r3: 1 - (0.006 + 0.051)
+    };
 
-// Standard banner light cones
-const standardLightCones = [
-    "Night on the Milky Way", "Sleep Like the Dead", "Moment of Victory",
-    "Carve the Moon", "Planetary Rendezvous", "Make the World Clamor"
-];
+    // Pity counters
+    let pity5 = 0;
+    let pity4 = 0;
 
-// Limited banner characters
-const limitedCharacters = [
-    "Dan Heng IL", "Kafka", "Blade", "Acheron"
-];
+    // Limited banner guarantees
+    let guaranteedLimited5 = false;
+    let guaranteedLimited4 = false;
 
-// Limited banner exclusive light cones
-const limitedLightCones = [
-    "Brighter Than the Sun", "Patience Is All You Need",
-    "The Unreachable Side", "Along the Passing Shore"
-];
+    // Pull history + collection
+    let history = [];
+    let collection = {}; // key = item name, value = count
 
+    // BANNER POOLS
 
-// ----------------------------
-// Pull Logic
-// ----------------------------
+    // STANDARD 5 star CHARACTERS
+    const standard5 = [
+        { name:"Welt", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/1/11/Character_Welt_Splash_Art.png" },
+        { name:"Gepard", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/9/96/Character_Gepard_Splash_Art.png" },
+        { name:"Himeko", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/8/8e/Character_Himeko_Splash_Art.png" }
+    ];
 
-let history = []; // store results
+    // STANDARD 4 star CHARACTERS
+    const standard4 = [
+        { name:"Asta", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/bd/Character_Asta_Splash_Art.png/revision/latest?cb=20230216231122" },
+        { name:"Serval", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/8/8a/Character_Serval_Splash_Art.png/revision/latest?cb=20230525090108" },
+        { name:"Natasha", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/7e/Character_Natasha_Splash_Art.png/revision/latest?cb=20240525042421" }
+    ];
 
-function getRandomItem(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
+    // 3 star LIGHT CONES
+    const lightcones3 = [
+        { name:"Fine Fruit", rarity:3, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/70/Light_Cone_Fine_Fruit.png/revision/latest?cb=20230719025055" },
+        { name:"Passkey", rarity:3, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/a/a4/Light_Cone_Passkey.png/revision/latest?cb=20230719025215" },
+        { name:"Amber", rarity:3, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/4/42/Light_Cone_Amber.png/revision/latest?cb=20230719024934" }
+    ];
 
-function pullOnce(bannerType) {
-    let roll = Math.random();
+    // LIMITED BANNER RATE-UP
+    const limited5 = [
+        { name:"Acheron", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/78/Character_Acheron_Splash_Art.png" },
+        { name:"Kafka", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/9/95/Character_Kafka_Splash_Art.png" }
+    ];
 
-    if (bannerType === "standard") {
-        // 50% character / 50% light cone
-        if (roll < 0.5) {
-            return "Character: " + getRandomItem(standardCharacters);
-        } else {
-            return "Light Cone: " + getRandomItem(standardLightCones);
+    const limited4 = [
+        { name:"Asta", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/bd/Character_Asta_Splash_Art.png/revision/latest?cb=20230216231122" },
+        { name:"Serval", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/8/8a/Character_Serval_Splash_Art.png/revision/latest?cb=20230525090108" },
+        { name:"Natasha", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/7e/Character_Natasha_Splash_Art.png/revision/latest?cb=20240525042421" }
+    ];
+
+    // Gacha
+    function rollRarity() {
+        pity5++;
+        pity4++;
+
+        // Hard pity for 5 star
+        if (pity5 >= 90) return 5;
+
+        // Soft pity 5 star (starting around 75)
+        if (pity5 > 74) {
+            let softRate = rates.r5 + (pity5 - 74) * 0.06;
+            if (Math.random() < softRate) return 5;
+        }
+
+        // Hard pity 4 star
+        if (pity4 >= 10) return 4;
+
+        // Roll normally
+        let r = Math.random();
+        if (r < rates.r5) return 5;
+        if (r < rates.r5 + rates.r4) return 4;
+        return 3;
+    }
+
+    function getItem(rarity, banner) {
+        // 5 star LOGIC
+        if (rarity === 5) {
+            pity5 = 0;
+
+            if (banner === "limited") {
+                if (guaranteedLimited5 || Math.random() < 0.5) {
+                    guaranteedLimited5 = false;
+                    return getRandom(limited5);
+                } else {
+                    guaranteedLimited5 = true;
+                    return getRandom(standard5);
+                }
+            }
+            return getRandom(standard5);
+        }
+
+        // 4 star LOGIC
+        if (rarity === 4) {
+            pity4 = 0;
+
+            if (banner === "limited") {
+                if (guaranteedLimited4 || Math.random() < 0.5) {
+                    guaranteedLimited4 = false;
+                    return getRandom(limited4);
+                } else {
+                    guaranteedLimited4 = true;
+                    return getRandom(standard4);
+                }
+            }
+            return getRandom(standard4);
+        }
+
+        // 3 star LOGIC
+        return getRandom(lightcones3);
+    }
+
+    // random helper
+    function getRandom(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    // Warp + Animations
+    function warp(amount) {
+        const banner = document.getElementById("banner").value;
+        const container = document.getElementById("pull-container");
+        container.innerHTML = "";
+
+        // Determine highest rarity for animation color
+        let pulls = [];
+        let maxRarity = 3;
+
+        for (let i = 0; i < amount; i++) {
+            const rarity = rollRarity();
+            const item = getItem(rarity, banner);
+            pulls.push(item);
+            history.push(item);
+
+            if (banner === "standard") historyStandard.push(item);
+            else historyLimited.push(item);
+
+            if (!collection[item.name]) collection[item.name] = 0;
+            collection[item.name]++;
+            
+            maxRarity = Math.max(maxRarity, rarity);
+        }
+
+        // Warp animation color
+        playWarpAnimation(maxRarity, () => {
+            // After warp flash, show items sliding in
+            pulls.forEach((item, index) => {
+                const div = document.createElement("div");
+                div.className = "pull-item r" + item.rarity;
+                div.innerHTML = `
+                    <img src="${item.img}">
+                    <div><strong>${item.name}</strong><br>${item.rarity}★</div>
+                `;
+                container.appendChild(div);
+                setTimeout(() => div.classList.add("show"), 300 * index);
+            });
+            updateHistory();
+        });
+    }
+
+    function showSidebarCollection() {
+        const box = document.getElementById("sidebar-content");
+        box.innerHTML = "<h2>Collection</h2>";
+
+        Object.entries(collection).forEach(([name, count]) => {
+            box.innerHTML += `
+                <div class='collection-entry'>
+                    <strong>${name}</strong> — Owned: ${count}
+                </div>
+            `;
+        });
+    }
+
+    function showSidebarHistory() {
+        const box = document.getElementById("sidebar-content");
+
+        box.innerHTML = `
+            <h2>Pull History</h2>
+
+            <div class='section-title'>Limited Banner</div>
+        `;
+
+        historyLimited.slice().reverse().forEach(i => {
+            box.innerHTML += `<div>${i.name} — ${i.rarity}★</div>`;
+        });
+
+        box.innerHTML += `
+            <div class='section-title'>Standard Banner</div>
+        `;
+
+        historyStandard.slice().reverse().forEach(i => {
+            box.innerHTML += `<div>${i.name} — ${i.rarity}★</div>`;
+        });
+    }
+
+    function openSidebar(type) {
+        const sidebar = document.getElementById("sidebar");
+        const box = document.getElementById("sidebar-content");
+
+        sidebar.classList.add("active");
+
+        if (type === "collection") {
+            showSidebarCollection();
+        } else if (type === "history") {
+            showSidebarHistory();
         }
     }
 
-    if (bannerType === "limited") {
-        // 70% limited char / 30% limited light cone
-        if (roll < 0.7) {
-            return "LIMITED Character: " + getRandomItem(limitedCharacters);
-        } else {
-            return "LIMITED Light Cone: " + getRandomItem(limitedLightCones);
-        }
-    }
-}
-
-function pull(amount) {
-    const banner = document.getElementById("banner").value;
-    const resultArea = document.getElementById("result-area");
-
-    resultArea.classList.remove("animate");
-    void resultArea.offsetWidth;
-    resultArea.classList.add("animate");
-
-    let results = [];
-
-    for (let i = 0; i < amount; i++) {
-        const item = pullOnce(banner);
-        results.push(item);
-        history.push(item);
+    function closeSidebar() {
+        document.getElementById("sidebar").classList.remove("active");
     }
 
-    // Display results
-    resultArea.innerHTML = results.join("<br>");
+    function playWarpAnimation(rarity, callback) {
+        const screen = document.getElementById("warp-screen");
+        const ticket = document.getElementById("ticket");
 
-    // Update history
-    const historyDiv = document.getElementById("history");
-    historyDiv.innerHTML = history.map(h => `<div class='item'>${h}</div>`).join("");
-}
+        screen.classList.remove("gold-flash", "purple-flash", "blue-flash");
+        if (rarity === 5) screen.classList.add("gold-flash");
+        else if (rarity === 4) screen.classList.add("purple-flash");
+        else screen.classList.add("blue-flash");
 
+        screen.classList.add("active");
+        ticket.classList.add("show");
+
+        setTimeout(() => {
+            screen.classList.remove("active");
+            ticket.classList.remove("show");
+            callback();
+        }, 1500);
+    }
+
+    function updateHistory() {
+        const h = document.getElementById("history");
+        h.innerHTML = history.map(i =>
+            `<div>${i.name} — ${i.rarity}★</div>`
+        ).join("");
+    }
+
+    function toggleCollection() {
+        const box = document.getElementById("collection-box");
+        if (box.style.display === "none") showCollection();
+        else box.style.display = "none";
+    }
+
+    function showCollection() {
+        const box = document.getElementById("collection-box");
+        box.style.display = "block";
+        box.innerHTML = "<h2>Your Collection</h2>";
+
+        Object.entries(collection).forEach(([name, count]) => {
+            box.innerHTML += `
+                <div class='collection-entry'>
+                    <strong>${name}</strong> — Owned: ${count}
+                </div>
+            `;
+        });
+    }
 </script>
 
 </body>
