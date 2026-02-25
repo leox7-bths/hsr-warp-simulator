@@ -381,23 +381,18 @@
 
     function showSidebarHistory() {
         const box = document.getElementById("sidebar-content");
+        box.innerHTML = `<h2>Pull History</h2><div class='section-title'>Limited Banner</div>`;
 
-        box.innerHTML = `
-            <h2>Pull History</h2>
-
-            <div class='section-title'>Limited Banner</div>
-        `;
-
-        historyLimited.slice().reverse().forEach(i => {
-            box.innerHTML += `<div>${i.name} — ${i.rarity}★</div>`;
+        // Numbered Limited Banner (oldest first)
+        historyLimited.forEach((i, idx) => {
+            box.innerHTML += `<div>${idx + 1}. ${i.name} — ${i.rarity}★</div>`;
         });
 
-        box.innerHTML += `
-            <div class='section-title'>Standard Banner</div>
-        `;
+        box.innerHTML += `<div class='section-title'>Standard Banner</div>`;
 
-        historyStandard.slice().reverse().forEach(i => {
-            box.innerHTML += `<div>${i.name} — ${i.rarity}★</div>`;
+        // Numbered Standard Banner (oldest first)
+        historyStandard.forEach((i, idx) => {
+            box.innerHTML += `<div>${idx + 1}. ${i.name} — ${i.rarity}★</div>`;
         });
     }
 
@@ -467,4 +462,3 @@
 
 </body>
 </html>
-
