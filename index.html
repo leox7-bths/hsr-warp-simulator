@@ -82,17 +82,7 @@
         z-index: 999;
     }
 
-/* Container fixed at bottom center */
-#warp-buttons {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 15px;
-    z-index: 1000; /* stay above other content */
-}
-
+    /* Container fixed at bottom center */
     .warp-button {
         display: inline-flex;
         align-items: center;
@@ -199,6 +189,68 @@
         border-bottom: 1px solid #444;
         padding-bottom: 5px;
     }
+
+    /* Banner Screen */
+    #banner-screen {
+        position: relative;
+        margin-top: 20px;
+        display: inline-block;
+    }
+
+    #banner-image {
+        width: 90%;
+        max-width: 900px;
+        border-radius: 15px;
+        box-shadow: 0 0 25px rgba(255,255,255,0.2);
+        display: block;
+    }
+
+    /* Left and Right Base */
+    .banner-left {
+        position: absolute;
+        bottom: 0.1px;
+        display: flex;
+        z-index: 1000;
+    }
+    
+    .banner-right {
+        position: absolute;
+        bottom: 0.1px;
+        display: flex;
+        gap: 15px;
+        z-index: 1000;
+    }
+
+    /* Left side */
+    .banner-left {
+        left: 20px;
+    }
+
+    /* Right side */
+    .banner-right {
+        right: 100px;
+    }
+
+    /* Result Screen */
+    #result-screen {
+        margin-top: 20px;
+        position: relative;
+        z-index: 2000;
+    }
+
+    /* Back Button */
+    #back-button {
+        position: absolute;
+        top: 15px;
+        right: 40px;
+        padding: 8px 15px;
+        font-size: 14px;
+        font-weight: bold;
+        background: white;
+        border-radius: 20px;
+        cursor: pointer;
+        z-index: 3000;
+    }
 </style>
 
 </head>
@@ -215,19 +267,31 @@
     </select>
 </div>
 
-<div id="warp-buttons">
-    <button class="warp-button" onclick="warp(1)">
-        <img src="https://starrail.honeyhunterworld.com/img/item/star-rail-special-pass-item_icon_figure.webp">
-        Warp ×1
-    </button>
+<div id="banner-screen">
 
-    <button class="warp-button" onclick="warp(10)">
-        <img src="https://starrail.honeyhunterworld.com/img/item/star-rail-special-pass-item_icon_figure.webp">
-        Warp ×10
-    </button>
-    <button class="warp-button" onclick="openSidebar('collection')">Collection</button>
-    <button class="warp-button" onclick="openSidebar('history')">History</button>
-</div>  
+    <!-- Banner Image -->
+    <img id="banner-image" src="" alt="Banner Image">
+
+    <!-- LEFT BUTTONS -->
+    <div class="banner-left">
+        <button class="warp-button" onclick="openSidebar('history')">History</button>
+        <button class="warp-button" onclick="openSidebar('collection')">Collection</button>
+    </div>
+
+    <!-- RIGHT BUTTONS -->
+    <div class="banner-right">
+        <button class="warp-button" onclick="warp(1)">
+            <img src="https://starrail.honeyhunterworld.com/img/item/star-rail-special-pass-item_icon_figure.webp">
+            Warp ×1
+        </button>
+
+        <button class="warp-button" onclick="warp(10)">
+            <img src="https://starrail.honeyhunterworld.com/img/item/star-rail-special-pass-item_icon_figure.webp">
+            Warp ×10
+        </button>
+    </div>
+
+</div>
 
 <!-- Sidebar Panel -->
 <div id="sidebar">
@@ -240,11 +304,14 @@
     <div id="ticket"></div>
 </div>
 
-<!-- Pull results -->
-<div id="pull-container"></div>
-
 <!-- Collection -->
 <div id="collection-box"></div>
+
+<!-- Warp Result Screen -->
+<div id="result-screen" style="display:none; position:relative;">
+    <button id="back-button" onclick="returnToBanner()">← Back</button>
+    <div id="pull-container"></div>
+</div>
 
 <script>
     let historyStandard = [];
@@ -275,7 +342,12 @@
     const standard5 = [
         { name:"Welt", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/1/11/Character_Welt_Splash_Art.png" },
         { name:"Gepard", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/9/96/Character_Gepard_Splash_Art.png" },
-        { name:"Himeko", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/8/8e/Character_Himeko_Splash_Art.png" }
+        { name:"Himeko", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/8/8e/Character_Himeko_Splash_Art.png" },
+        { name:"Yanqing", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/6/6d/Character_Yanqing_Splash_Art.png" },
+        { name:"Clara", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/c/c2/Character_Clara_Splash_Art.png" },
+        { name:"Bronya", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/7c/Character_Bronya_Splash_Art.png" },
+        { name:"Bailu", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/e/e9/Character_Bailu_Splash_Art.png" },
+
     ];
 
     // STANDARD 4 star CHARACTERS
@@ -342,6 +414,22 @@ const lightcones4 = [
         { name: "Hook", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/e/ec/Character_Hook_Splash_Art.png", rate: 0.33 },
         { name: "Pela", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/c/c9/Character_Pela_Splash_Art.png", rate: 0.33 }
     ];
+
+    const bannerImages = {
+        standard: "https://static.wikia.nocookie.net/houkai-star-rail/images/6/6f/Stellar_Warp.png",
+        seele: "https://static.wikia.nocookie.net/houkai-star-rail/images/e/e4/Butterfly_on_Swordtip_2023-04-26.jpg"
+    };
+
+    //banner images function
+    function updateBannerImage() {
+        const banner = document.getElementById("banner").value;
+        document.getElementById("banner-image").src = bannerImages[banner];
+    }
+
+    function returnToBanner() {
+        document.getElementById("result-screen").style.display = "none";
+        document.getElementById("banner-screen").style.display = "inline-block";
+    }
 
     // Gacha
     function rollRarity() {
@@ -434,8 +522,10 @@ const lightcones4 = [
 
     // Warp + Animations
     function warp(amount) {
+        document.getElementById("banner-screen").style.display = "none";
+        document.getElementById("result-screen").style.display = "block";
         const banner = document.getElementById("banner").value;
-        const container = document.getElementById("pull-container");
+        const container = document.querySelector("#result-screen #pull-container");
         container.innerHTML = "";
 
         let pulls = [];
@@ -609,6 +699,9 @@ const lightcones4 = [
             `;
         });
     }
+
+    document.getElementById("banner").addEventListener("change", updateBannerImage);
+    updateBannerImage();
 </script>
 
 </body>
