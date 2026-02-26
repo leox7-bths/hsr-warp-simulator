@@ -532,6 +532,18 @@
         if (rarity === 5) {
             pity5 = 0;
 
+            if (cheatGuaranteeNext5) {
+                cheatGuaranteeNext5 = false;
+
+                if (banner === "seele") return getRandom(seeleLimited5);
+                if (banner === "seelelc") return getRandom(seelelcLimited5);
+                if (banner === "jingyuan") return getRandom(jingyuanLimited5);
+                if (banner === "jingyuanlc") return getRandom(jingyuanlcLimited5);
+
+                // standard banner fallback
+                return Math.random() < 0.5 ? getRandom(standard5) : getRandom(standardlc5);
+            }
+
             if (banner === "seele") {
                 if (guaranteedLimited5 || Math.random() < 0.5) {
                     guaranteedLimited5 = false;
@@ -971,6 +983,7 @@
     let cheatActive = false;
     let cheat10x5Star = false;
     let hardMode = false;
+    let cheatGuaranteeNext5 = false;
 
     cheatIcon.addEventListener("click", () => {
         const now = Date.now();
@@ -995,6 +1008,10 @@
                 alert("Challenge activated! Next 100 pulls there is the chance to get a trashbag (which will not let a five character appear for the next 10 pull)!");
                 cheatTrashbagActive = true;
                 cheatTrashbagPullsLeft = 100;
+            }
+            if (cheatInput.value.toUpperCase() === "GUARANTEE") {
+                alert("Cheat activated! Next 5 star will be the featured character/light cone!");
+                cheatGuaranteeNext5 = true;
             }
             cheatInput.value = "";
             cheatInput.style.display = "none";
