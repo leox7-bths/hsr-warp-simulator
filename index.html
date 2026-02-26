@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>HSR Warp Simulator</title>
 
+<link rel="icon" href="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon.png" type="image/png">
+
 <style>
     body {
         font-family: Arial;
@@ -275,9 +277,16 @@
     <label><strong>Select Banner:</strong></label><br>
     <select id="banner">
         <option value="standard">Standard Banner</option>
-        <option value="seele">Seele Banner 1.4</option>
+        <option value="seele">Seele Character Banner 1.0</option>
+        <option value="seelelc">Seele Light Cone Banner 1.0</option>
+        <option value="jingyuan">Jing Yuan Character Banner 1.0</option>
+        <option value="jingyuanlc">Jing Yuan Light Cone Banner 1.0</option>
     </select>
 </div>
+
+<img id="cheat-icon" src="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon2.png" style="position:fixed; top:10px; left:10px; width:40px; height:40px; cursor:pointer; z-index:9999;">
+
+<input id="cheat-input" type="text" placeholder="Enter code..." style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); padding:10px 15px; font-size:16px; border-radius:10px; display:none; z-index:9999;">
 
 <div id="banner-screen">
 
@@ -329,6 +338,7 @@
 <script>
     let historyStandard = [];
     let historyLimited = [];
+    let historyLightcone = [];
 
     // Rates (approx HSR)
     const rates = {
@@ -347,7 +357,7 @@
 
     // Pull history + collection
     let history = [];
-    let collection = {}; // key = item name, value = count
+    let collection = {};
 
     // BANNER POOLS
 
@@ -360,16 +370,29 @@
         { name:"Clara", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/c/c2/Character_Clara_Splash_Art.png" },
         { name:"Bronya", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/7c/Character_Bronya_Splash_Art.png" },
         { name:"Bailu", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/e/e9/Character_Bailu_Splash_Art.png" },
+    ];
 
+    // STANDARD 5 star lightcone
+    const standardlc5 = [
+        { name:"In the Name of the World", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b7/Light_Cone_In_the_Name_of_the_World.png" },
+        { name:"Moment of Victory", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/a/a1/Light_Cone_Moment_of_Victory.png" },
+        { name:"Night on the Milky Way", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/d/d4/Light_Cone_Night_on_the_Milky_Way.png" },
+        { name:"Sleep Like the Dead", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/2/2d/Light_Cone_Sleep_Like_the_Dead.png" },
+        { name:"Something Irreplaceable", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/7a/Light_Cone_Something_Irreplaceable.png" },
+        { name:"But the Battle Isn't Over", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/2/29/Light_Cone_But_the_Battle_Isn't_Over.png" },
+        { name:"Time Waits for No One", rarity:5, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b1/Light_Cone_Time_Waits_for_No_One.png" }
     ];
 
     // STANDARD 4 star CHARACTERS
     const all4 = [
-        { name:"Asta", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/bd/Character_Asta_Splash_Art.png" },
-        { name:"Serval", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/8/8a/Character_Serval_Splash_Art.png" },
-        { name:"Natasha", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/7e/Character_Natasha_Splash_Art.png" },
+        { name:"Asta", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/bd/Character_Asta_Splash_Art.png"},
+        { name:"Serval", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/8/8a/Character_Serval_Splash_Art.png"},
+        { name:"Natasha", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/7/7e/Character_Natasha_Splash_Art.png"},
         { name: "Hook", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/e/ec/Character_Hook_Splash_Art.png"},
-        { name: "Pela", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/c/c9/Character_Pela_Splash_Art.png"}
+        { name: "Pela", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/c/c9/Character_Pela_Splash_Art.png"},
+        { name: "March 7th", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/c/c7/Character_March_7th_%28Preservation%29_Splash_Art.png"},
+        { name: "Tingyun", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/5/5b/Character_Tingyun_Splash_Art.png"},
+        { name: "Sushang", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/7/72/Character_Sushang_Splash_Art.png"}
     ];
 
     // 3 star LIGHT CONES
@@ -409,6 +432,7 @@
         { name:"Landau's Choice", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b7/Light_Cone_Landau%27s_Choice.png" },
         { name:"Day One of My New Life", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/6/61/Light_Cone_Day_One_of_My_New_Life.png" },
         { name:"This Is Me!", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/c/cb/Light_Cone_This_Is_Me%21.png" },
+        { name:"Good Night and Sleep Well", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/e/ef/Light_Cone_Good_Night_and_Sleep_Well.png"},
         { name:"We Are Wildfire", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/c/c2/Light_Cone_We_Are_Wildfire.png" }
     ];
 
@@ -428,9 +452,44 @@
         { name: "Pela", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/c/c9/Character_Pela_Splash_Art.png", rate: 0.33 }
     ];
 
+    const seelelcLimited5 = [
+        { name: "In the Night", rarity: 5, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/7/78/Light_Cone_In_the_Night.png" }
+    ];
+
+    const seelelcLimited4 = [
+        { name: "The Moles Welcome You", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/5/5a/Light_Cone_The_Moles_Welcome_You.png", rate: 0.33 },
+        { name: "Good Night and Sleep Well", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/e/ef/Light_Cone_Good_Night_and_Sleep_Well.png", rate: 0.33 },
+        { name: "Post-Op Conversation", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/0/03/Light_Cone_Post-Op_Conversation.png", rate: 0.33 }
+    ];
+
+    // Jing yuan
+    const jingyuanLimited5 = [
+        { name: "Jing Yuan", rarity: 5, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/4/48/Character_Jing_Yuan_Splash_Art.png" }
+    ];
+
+    const jingyuanLimited4 = [
+        { name: "March 7th", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/c/c7/Character_March_7th_%28Preservation%29_Splash_Art.png", rate: 0.33 },
+        { name: "Tingyun", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/5/5b/Character_Tingyun_Splash_Art.png", rate: 0.33 },
+        { name: "Sushang", rarity: 4, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/7/72/Character_Sushang_Splash_Art.png", rate: 0.33 }
+    ];
+
+    const jingyuanlcLimited5 = [
+        { name: "Before Dawn", rarity: 5, img: "https://static.wikia.nocookie.net/houkai-star-rail/images/2/26/Light_Cone_Before_Dawn.png" }
+    ];
+
+    const jingyuanlcLimited4 = [
+        { name:"Day One of My New Life", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/6/61/Light_Cone_Day_One_of_My_New_Life.png", rate: 0.33 },
+        { name:"Only Silence Remains", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/e/e2/Light_Cone_Only_Silence_Remains.png", rate: 0.33 },
+        { name:"Planetary Rendezvous", rarity:4, img:"https://static.wikia.nocookie.net/houkai-star-rail/images/b/b0/Light_Cone_Planetary_Rendezvous.png", rate: 0.33 }
+    ];
+
+    //BANNER IMAGE
     const bannerImages = {
         standard: "images/Stellar_Warp.webp",
-        seele: "images/Butterfly_on_Swordtip.webp"
+        seele: "images/Butterfly_on_Swordtip.webp",
+        seelelc: "images/Brilliant_Fixation.webp",
+        jingyuan: "images/Swirl_of_Heavenly_Spear.png",
+        jingyuanlc: "images/Before_Dawn.webp"
     };
 
     //banner images function
@@ -483,7 +542,41 @@
                 }
             }
 
-            return getRandom(standard5);
+            if (banner === "seelelc") {
+                if (guaranteedLimited5 || Math.random() < 0.5) {
+                    guaranteedLimited5 = false;
+                    return getRandom(seelelcLimited5);
+                } else {
+                    guaranteedLimited5 = true;
+                    return getRandom(standardlc5);
+                }
+            }
+
+            if (banner === "jingyuan") {
+                if (guaranteedLimited5 || Math.random() < 0.5) {
+                    guaranteedLimited5 = false;
+                    return getRandom(jingyuanLimited5);
+                } else {
+                    guaranteedLimited5 = true;
+                    return getRandom(standard5);
+                }
+            }
+
+            if (banner === "jingyuanlc") {
+                if (guaranteedLimited5 || Math.random() < 0.5) {
+                    guaranteedLimited5 = false;
+                    return getRandom(jingyuanlcLimited5);
+                } else {
+                    guaranteedLimited5 = true;
+                    return getRandom(standardlc5);
+                }
+            }
+
+            if (Math.random() < 0.5) {
+                return getRandom(standardlc5);
+            } else {
+                return getRandom(standard5);
+            }
         }
 
         // 4 STAR LOGIC
@@ -510,6 +603,43 @@
                 return getRandom(all4);
             }
 
+             if (banner === "seelelc") {
+                if (Math.random() < 0.8) {
+                    const total = seelelcLimited4.reduce((sum, item) => sum + item.rate, 0);
+                    let rand = Math.random() * total;
+                    for (let item of seelelcLimited4) {
+                        rand -= item.rate;
+                        if (rand <= 0) return item;
+                    }
+                }
+                return getRandom(lightcones4);
+            }
+
+            if (banner === "jingyuan") {
+                if (Math.random() < 0.8) {
+                    const total = jingyuanLimited4.reduce((sum, item) => sum + item.rate, 0);
+                    let rand = Math.random() * total;
+
+                    for (let item of jingyuanLimited4) {
+                        rand -= item.rate;
+                        if (rand <= 0) return item;
+                    }
+                }
+                return getRandom(all4);
+            }
+
+             if (banner === "jingyuanlc") {
+                if (Math.random() < 0.8) {
+                    const total = jingyuanlcLimited4.reduce((sum, item) => sum + item.rate, 0);
+                    let rand = Math.random() * total;
+                    for (let item of jingyuanlcLimited4) {
+                        rand -= item.rate;
+                        if (rand <= 0) return item;
+                    }
+                }
+                return getRandom(lightcones4);
+            }
+
             if (banner === "limited") {
                 if (guaranteedLimited4 || Math.random() < 0.5) {
                     guaranteedLimited4 = false;
@@ -533,6 +663,10 @@
         return arr[Math.floor(Math.random() * arr.length)];
     }
 
+    let cheatTrashbagActive = false;
+    let cheatTrashbagPullsLeft = 0;
+    let cheatBlock5Pulls = 0;
+
     // Warp + Animations
     function warp(amount) {
         document.getElementById("banner-screen").style.display = "none";
@@ -545,61 +679,100 @@
         let maxRarity = 3;
 
         for (let i = 0; i < amount; i++) {
-            const rarity = rollRarity();
-            const item = getItem(rarity, banner);
+            let rarity;
+
+            if (cheatBlock5Pulls > 0) {
+                cheatBlock5Pulls--;
+                rarity = rollRarity();
+                if (rarity === 5) rarity = 4; // block 5-star
+            } else {
+                rarity = cheat10x5Star ? 5 : rollRarity();
+            }
+
+            let item;
+
+            // Trashbag cheat
+            if (cheatTrashbagActive && cheatTrashbagPullsLeft > 0 && Math.random() < 0.05) {
+                cheatTrashbagPullsLeft--;
+                item = {
+                    name: "Trashbag",
+                    rarity: 0,
+                    img: "https://static.wikia.nocookie.net/houkai-star-rail/images/8/82/Item_Trash.png",
+                    isTrash: true
+                };
+                cheatBlock5Pulls = 10; // block 5-stars after Trashbag
+            } else {
+                item = getItem(rarity, banner);
+            }
+
             pulls.push(item);
             history.push(item);
 
-            if (banner === "standard") historyStandard.push(item);
-            else historyLimited.push(item);
+            if (banner === "seele" || banner === "jingyuan") {
+                historyLimited.push(item);
+            }
+            else if (banner === "seelelc" || banner === "jingyuanlc") {
+                historyLightcone.push(item); 
+            } else {
+                historyStandard.push(item);
+            }
 
             if (!collection[item.name]) collection[item.name] = 0;
             collection[item.name]++;
-            
+
             maxRarity = Math.max(maxRarity, rarity);
         }
 
+        if (cheat10x5Star && amount === 10) cheat10x5Star = false;
+
         playWarpAnimation(maxRarity, () => {
             if (amount === 10) {
-                // Custom 10-pull layout
-                const layout = [3, 4, 3]; // rows
-                function shuffleArray(arr) {
-                    for (let i = arr.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [arr[i], arr[j]] = [arr[j], arr[i]];
-                    }
-                }
+                // layout: 3 top, 4 middle, 3 bottom
+                const layout = [3, 4, 3];
                 let idx = 0;
                 layout.forEach(rowCount => {
                     const row = document.createElement("div");
                     row.style.display = "flex";
                     row.style.justifyContent = "center";
                     row.style.gap = "10px";
+
                     for (let j = 0; j < rowCount; j++) {
                         const item = pulls[idx];
                         const div = document.createElement("div");
                         div.className = "pull-item r" + item.rarity;
+                        if (item.isTrash) div.style.border = "3px solid red";
                         div.innerHTML = `
-                            <img src="${item.img}">
-                            <div><strong>${item.name}</strong><br>${item.rarity}★</div>
+                            <img src="${item.img}" class="pull-img">
+                            <div><strong>${item.name}</strong><br>${item.rarity} star</div>
                         `;
                         row.appendChild(div);
-                        setTimeout(() => div.classList.add("show"), 300 * idx);
+
+                        setTimeout(() => {
+                            div.classList.add("show");
+                            setTimeout(() => div.style.boxShadow = "", 500);
+                        }, 300 * idx);
+
                         idx++;
                     }
+
                     container.appendChild(row);
                 });
             } else {
-                // Normal single pull or other amounts
+                // single pulls
                 pulls.forEach((item, index) => {
                     const div = document.createElement("div");
                     div.className = "pull-item r" + item.rarity;
+                    if (item.isTrash) div.style.border = "3px solid red";
                     div.innerHTML = `
-                        <img src="${item.img}">
-                        <div><strong>${item.name}</strong><br>${item.rarity}★</div>
+                        <img src="${item.img}" class="pull-img">
+                        <div><strong>${item.name}</strong><br>${item.rarity} star</div>
                     `;
                     container.appendChild(div);
-                    setTimeout(() => div.classList.add("show"), 300 * index);
+
+                    setTimeout(() => {
+                        div.classList.add("show");
+                        setTimeout(() => div.style.boxShadow = "", 500);
+                    }, 300 * index);
                 });
             }
             updateHistory();
@@ -625,12 +798,26 @@
 
         // Numbered Limited Banner
         historyLimited.forEach((i, idx) => {
-            const color = i.rarity === 5 ? "gold" : "white"; // 5★ = gold
+            const color = i.rarity === 5 ? "gold" : "white"; // 5 star = gold
             box.innerHTML += `
                 <div style="display:flex; align-items:center; gap:10px; margin:4px 0; color:${color};">
                     <div style="width:20px; text-align:right;">${idx + 1}.</div>
                     <img src="${i.img}" style="width:40px; height:40px; border-radius:6px;">
-                    <div>${i.name} — ${i.rarity}★</div>
+                    <div>${i.name} — ${i.rarity} star</div>
+                </div>
+            `;
+        });
+
+        box.innerHTML += `<div class='section-title'>Light Cone Banner</div>`;
+
+        // Numbered Light Cone Banner
+        historyLightcone.forEach((i, idx) => {
+            const color = i.rarity === 5 ? "gold" : "white";
+            box.innerHTML += `
+                <div style="display:flex; align-items:center; gap:10px; margin:4px 0; color:${color};">
+                    <div style="width:20px; text-align:right;">${idx + 1}.</div>
+                    <img src="${i.img}" style="width:40px; height:40px; border-radius:6px;">
+                    <div>${i.name} — ${i.rarity} star</div>
                 </div>
             `;
         });
@@ -644,7 +831,7 @@
                 <div style="display:flex; align-items:center; gap:10px; margin:4px 0; color:${color};">
                     <div style="width:20px; text-align:right;">${idx + 1}.</div>
                     <img src="${i.img}" style="width:40px; height:40px; border-radius:6px;">
-                    <div>${i.name} — ${i.rarity}★</div>
+                    <div>${i.name} — ${i.rarity} star</div>
                 </div>
             `;
         });
@@ -698,7 +885,6 @@
         let frame = 0;
 
         function animate() {
-            // Draw a semi-transparent black overlay to fade previous stars (creates trails)
             ctx.fillStyle = "rgba(0,0,0,0.15)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -754,7 +940,7 @@
     function updateHistory() {
         const h = document.getElementById("history");
         h.innerHTML = history.map(i =>
-            `<div>${i.name} — ${i.rarity}★</div>`
+            `<div>${i.name} — ${i.rarity} star</div>`
         ).join("");
     }
 
@@ -777,6 +963,45 @@
             `;
         });
     }
+
+    let clickTimes = [];
+    const cheatIcon = document.getElementById("cheat-icon");
+    const cheatInput = document.getElementById("cheat-input");
+
+    let cheatActive = false;
+    let cheat10x5Star = false;
+    let hardMode = false;
+
+    cheatIcon.addEventListener("click", () => {
+        const now = Date.now();
+        clickTimes.push(now);
+
+        clickTimes = clickTimes.filter(t => now - t <= 3000);
+
+        if (clickTimes.length >= 10 && !cheatActive) {
+            cheatActive = true;
+            cheatInput.style.display = "block";
+            cheatInput.focus();
+        }
+    });
+
+    cheatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            if (cheatInput.value.toUpperCase() === "LUCKY") {
+                alert("Cheat activated! Next 10 pulls are all guaranteed 5 star!");
+                cheat10x5Star = true;
+            }
+            if (cheatInput.value.toUpperCase() === "DIOLATASUCKS") {
+                alert("Challenge activated! Next 100 pulls there is the chance to get a trashbag (which will not let a five character appear for the next 10 pull)!");
+                cheatTrashbagActive = true;
+                cheatTrashbagPullsLeft = 100;
+            }
+            cheatInput.value = "";
+            cheatInput.style.display = "none";
+            cheatActive = false;
+            clickTimes = [];
+        }
+    });
 
     document.getElementById("banner").addEventListener("change", updateBannerImage);
     updateBannerImage();
