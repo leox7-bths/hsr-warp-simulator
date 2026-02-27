@@ -40,22 +40,47 @@
     /* Sliding items */
     .pull-item {
         width: 260px;
+        height: 80px;
         padding: 10px;
-        background: #222;
         border-radius: 10px;
+        background: rgba(20, 20, 20, 0.85);
+        overflow: hidden;
         display: flex;
+        flex-direction: row;
         align-items: center;
+        justify-content: flex-start;
+        box-sizing: border-box;
         opacity: 0;
         transform: translateX(-300px);
         transition: all 0.4s ease;
-        gap: 10px;
-        border: 2px solid #333;
+        border: 3px solid transparent;
     }
 
-    .pull-item img {
-        width: 60px;
-        height: 60px;
+    .pull-item.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .pull-item .pull-img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
         border-radius: 8px;
+        flex-shrink: 0;
+    }
+
+    .pull-item div {
+        margin-left: 12px;
+        text-align: left;
+        font-size: 16px;
+        line-height: 18px;
+    }
+
+    .row-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 2px 0;
     }
 
     .pull-item.show {
@@ -331,7 +356,7 @@
 
 <!-- Warp Result Screen -->
 <div id="result-screen" style="display:none; position:relative;">
-    <button id="back-button" onclick="returnToBanner()">← Back</button>
+    <button id="back-button" onclick="returnToBanner()">✖</button>
     <div id="pull-container"></div>
 </div>
 
@@ -486,10 +511,10 @@
     //BANNER IMAGE
     const bannerImages = {
         standard: "images/Stellar_Warp.webp",
-        seele: "images/Butterfly_on_Swordtip.webp",
-        seelelc: "images/Brilliant_Fixation.webp",
-        jingyuan: "images/Swirl_of_Heavenly_Spear.png",
-        jingyuanlc: "images/Before_Dawn.webp"
+        seele: "images/Butterfly_on_Swordtip_2023-04-26.webp",
+        seelelc: "images/Brilliant_Fixation_2023-04-26.webp",
+        jingyuan: "images/Swirl_of_Heavenly_Spear_2023-05-17.webp",
+        jingyuanlc: "images/Brilliant_Fixation_2023-05-17.webp"
     };
 
     //banner images function
@@ -696,7 +721,7 @@
             if (cheatBlock5Pulls > 0) {
                 cheatBlock5Pulls--;
                 rarity = rollRarity();
-                if (rarity === 5) rarity = 4; // block 5-star
+                if (rarity === 5) rarity = 4;
             } else {
                 rarity = cheat10x5Star ? 5 : rollRarity();
             }
@@ -712,7 +737,7 @@
                     img: "https://static.wikia.nocookie.net/houkai-star-rail/images/8/82/Item_Trash.png",
                     isTrash: true
                 };
-                cheatBlock5Pulls = 10; // block 5-stars after Trashbag
+                cheatBlock5Pulls = 10;
             } else {
                 item = getItem(rarity, banner);
             }
@@ -722,9 +747,8 @@
 
             if (banner === "seele" || banner === "jingyuan") {
                 historyLimited.push(item);
-            }
-            else if (banner === "seelelc" || banner === "jingyuanlc") {
-                historyLightcone.push(item); 
+            } else if (banner === "seelelc" || banner === "jingyuanlc") {
+                historyLightcone.push(item);
             } else {
                 historyStandard.push(item);
             }
@@ -739,29 +763,39 @@
 
         playWarpAnimation(maxRarity, () => {
             if (amount === 10) {
-                // layout: 3 top, 4 middle, 3 bottom
+                // 3 4 3 layout
                 const layout = [3, 4, 3];
                 let idx = 0;
+
                 layout.forEach(rowCount => {
                     const row = document.createElement("div");
+                    row.className = "row-container";
                     row.style.display = "flex";
                     row.style.justifyContent = "center";
                     row.style.gap = "10px";
 
+                    // Apply 30 degree clockwise rotation to the entire row
+                    row.style.transform = "rotate(-15deg)";
+                    row.style.transformOrigin = "center";
+                    row.style.margin = "30px 0";
+
                     for (let j = 0; j < rowCount; j++) {
                         const item = pulls[idx];
                         const div = document.createElement("div");
-                        div.className = "pull-item r" + item.rarity;
+                        div.className = "pull-item r" + item.rarity; // This will automatically apply your border colors via CSS
+
+                        // Extra for trashbag override
                         if (item.isTrash) div.style.border = "3px solid red";
+
                         div.innerHTML = `
                             <img src="${item.img}" class="pull-img">
                             <div><strong>${item.name}</strong><br>${item.rarity} star</div>
                         `;
+
                         row.appendChild(div);
 
                         setTimeout(() => {
                             div.classList.add("show");
-                            setTimeout(() => div.style.boxShadow = "", 500);
                         }, 300 * idx);
 
                         idx++;
@@ -769,24 +803,29 @@
 
                     container.appendChild(row);
                 });
+
             } else {
-                // single pulls
+                // Single pulls
                 pulls.forEach((item, index) => {
                     const div = document.createElement("div");
-                    div.className = "pull-item r" + item.rarity;
+                    div.className = "pull-item r" + item.rarity; // This will automatically apply your border colors via CSS
+
+                    // Extra for trashbag override
                     if (item.isTrash) div.style.border = "3px solid red";
+
                     div.innerHTML = `
                         <img src="${item.img}" class="pull-img">
                         <div><strong>${item.name}</strong><br>${item.rarity} star</div>
                     `;
+
                     container.appendChild(div);
 
                     setTimeout(() => {
                         div.classList.add("show");
-                        setTimeout(() => div.style.boxShadow = "", 500);
                     }, 300 * index);
                 });
             }
+
             updateHistory();
         });
     }
