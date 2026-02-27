@@ -26,7 +26,7 @@
 
     /* Pull reveal container */
     #pull-container {
-        margin-top: 25px;
+        margin-top: 55px;
         width: 100%;
         display: flex;
         flex-direction: column;
@@ -40,7 +40,7 @@
     /* Sliding items */
     .pull-item {
         width: 260px;
-        height: 80px;
+        height: 100px;
         padding: 10px;
         border-radius: 10px;
         background: rgba(20, 20, 20, 0.85);
@@ -289,6 +289,52 @@
         animation: spin 1s linear infinite;
         opacity: 0;
         margin: 0 auto;
+    }
+
+    #fullscreen-reveal {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, #111 0%, #000 80%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+        padding-top: 250px;
+    }
+
+    .hsr-single {
+        opacity: 0;
+        transform: scale(0.9);
+        transition: all 0.3s ease;
+    }
+
+    .hsr-single.show {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .hsr-layout {
+        display: flex;
+        align-items: center;
+        gap: 100px;
+    }
+
+    .hsr-name {
+        text-align: right;
+    }
+
+    .hsr-name h1 {
+        font-size: 60px;
+        margin: 0;
+    }
+
+    .hsr-name p {
+        font-size: 24px;
+        opacity: 0.8;
+    }
+
+    .hsr-image img {
+        height: 500px;
     }
 </style>
 
@@ -763,9 +809,11 @@
 
         playWarpAnimation(maxRarity, () => {
             if (amount === 10) {
-                // 3 4 3 layout
+
                 const layout = [3, 4, 3];
                 let idx = 0;
+
+                container.innerHTML = "";
 
                 layout.forEach(rowCount => {
                     const row = document.createElement("div");
@@ -773,18 +821,16 @@
                     row.style.display = "flex";
                     row.style.justifyContent = "center";
                     row.style.gap = "10px";
-
-                    // Apply 30 degree clockwise rotation to the entire row
                     row.style.transform = "rotate(-15deg)";
                     row.style.transformOrigin = "center";
                     row.style.margin = "30px 0";
 
                     for (let j = 0; j < rowCount; j++) {
                         const item = pulls[idx];
-                        const div = document.createElement("div");
-                        div.className = "pull-item r" + item.rarity; // This will automatically apply your border colors via CSS
 
-                        // Extra for trashbag override
+                        const div = document.createElement("div");
+                        div.className = "pull-item r" + item.rarity;
+
                         if (item.isTrash) div.style.border = "3px solid red";
 
                         div.innerHTML = `
@@ -792,25 +838,26 @@
                             <div><strong>${item.name}</strong><br>${item.rarity} star</div>
                         `;
 
+                        div.classList.add("hidden-card");
+                        div.dataset.index = idx;
+
                         row.appendChild(div);
-
-                        setTimeout(() => {
-                            div.classList.add("show");
-                        }, 300 * idx);
-
                         idx++;
                     }
 
                     container.appendChild(row);
                 });
 
+                container.style.display = "none"; // hide grid
+                playOneByOne(pulls, container);
+
             } else {
+
                 // Single pulls
                 pulls.forEach((item, index) => {
                     const div = document.createElement("div");
-                    div.className = "pull-item r" + item.rarity; // This will automatically apply your border colors via CSS
+                    div.className = "pull-item r" + item.rarity;
 
-                    // Extra for trashbag override
                     if (item.isTrash) div.style.border = "3px solid red";
 
                     div.innerHTML = `
@@ -828,6 +875,72 @@
 
             updateHistory();
         });
+    }
+
+    function playOneByOne(pulls, gridContainer) {
+        const resultScreen = document.getElementById("result-screen");
+
+        let index = 0;
+
+        const revealLayer = document.createElement("div");
+        revealLayer.id = "fullscreen-reveal";
+        resultScreen.appendChild(revealLayer);
+
+        function showItem(item) {
+            revealLayer.innerHTML = "";
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "hsr-single r" + item.rarity;
+
+            wrapper.innerHTML = `
+                <div class="hsr-layout">
+                    <div class="hsr-name">
+                        <h1>${item.name}</h1>
+                        <p>${item.rarity} ★</p>
+                    </div>
+                    <div class="hsr-image">
+                        <img src="${item.img}">
+                    </div>
+                </div>
+            `;
+
+            revealLayer.appendChild(wrapper);
+
+            setTimeout(() => {
+                wrapper.classList.add("show");
+            }, 30);
+        }
+
+        function next() {
+            if (index >= pulls.length) {
+                document.removeEventListener("click", next);
+
+                // Remove fullscreen layer
+                revealLayer.remove();
+
+                // Show grid
+                gridContainer.style.display = "block";
+
+                const cards = gridContainer.querySelectorAll(".pull-item");
+
+                cards.forEach((card, i) => {
+                    card.classList.remove("hidden-card");
+
+                    setTimeout(() => {
+                        card.classList.add("show");
+                    }, 100 * i);
+                });
+
+                return;
+            }
+
+            showItem(pulls[index]);
+            index++;
+        }
+
+        document.addEventListener("click", next);
+
+        next();
     }
 
     function showSidebarCollection() {
@@ -849,7 +962,7 @@
 
         // Numbered Limited Banner
         historyLimited.forEach((i, idx) => {
-            const color = i.rarity === 5 ? "gold" : "white"; // 5 star = gold
+            const color = i.rarity === 5 ? "gold" : "white";
             box.innerHTML += `
                 <div style="display:flex; align-items:center; gap:10px; margin:4px 0; color:${color};">
                     <div style="width:20px; text-align:right;">${idx + 1}.</div>
