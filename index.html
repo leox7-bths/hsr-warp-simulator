@@ -251,7 +251,7 @@
         document.getElementById("banner-screen").style.display = "inline-block";
         const bannerUI = document.getElementById("banner-ui");
         bannerUI.classList.remove("hidden");
-        document.body.style.background = "#0d0d0d";
+        document.body.style.background = "url('images/background.webp') no-repeat center center fixed";
     }
 
     // Gacha
@@ -983,6 +983,7 @@
         ripple.dataset.timeout = timeout;
     }
 
+    document.body.style.background = "url('images/background.webp') no-repeat center center fixed";
     document.getElementById("banner").addEventListener("change", updateBannerImage);
     updateBannerImage();
 </script>
