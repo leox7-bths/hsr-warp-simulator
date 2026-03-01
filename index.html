@@ -8,18 +8,20 @@
 </head>
 <body>
 
-<h1>HSR Warp Simulator</h1>
+<div id="banner-ui">
+    <h1>HSR Warp Simulator</h1>
 
-<!-- Banner selection -->
-<div>
-    <label><strong>Select Banner:</strong></label><br>
-    <select id="banner">
-        <option value="standard">Standard Banner</option>
-        <option value="seele">Seele Character Banner 1.0</option>
-        <option value="seelelc">Seele Light Cone Banner 1.0</option>
-        <option value="jingyuan">Jing Yuan Character Banner 1.0</option>
-        <option value="jingyuanlc">Jing Yuan Light Cone Banner 1.0</option>
-    </select>
+    <!-- Banner selection -->
+    <div>
+        <label><strong>Select Banner:</strong></label><br>
+        <select id="banner">
+            <option value="standard">Standard Banner</option>
+            <option value="seele">Seele Character Banner 1.0</option>
+            <option value="seelelc">Seele Light Cone Banner 1.0</option>
+            <option value="jingyuan">Jing Yuan Character Banner 1.0</option>
+            <option value="jingyuanlc">Jing Yuan Light Cone Banner 1.0</option>
+        </select>
+    </div>
 </div>
 
 <img id="cheat-icon" src="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon2.png" style="position:fixed; top:10px; left:10px; width:40px; height:40px; cursor:pointer; z-index:9999;">
@@ -237,8 +239,19 @@
     }
 
     function returnToBanner() {
+        stopOneByOne = true;
+        oneByOneRunning = false;
+        activeRipples.forEach(r => {
+            clearTimeout(r.dataset.timeout);
+            r.remove();
+        });
+        activeRipples = [];
+
         document.getElementById("result-screen").style.display = "none";
         document.getElementById("banner-screen").style.display = "inline-block";
+        const bannerUI = document.getElementById("banner-ui");
+        bannerUI.classList.remove("hidden");
+        document.body.style.background = "#0d0d0d";
     }
 
     // Gacha
@@ -413,14 +426,21 @@
         return arr[Math.floor(Math.random() * arr.length)];
     }
 
+    function getStarImages(rarity) {
+        return '<img src="images/star.png" style="width:10px;height:10px;margin-right:2px;">'.repeat(rarity);
+    }
+
     let cheatTrashbagActive = false;
     let cheatTrashbagPullsLeft = 0;
     let cheatBlock5Pulls = 0;
     let stopOneByOne = false;
     let oneByOneRunning = false;
+    let activeRipples = [];
 
     // Warp + Animations
     function warp(amount) {
+        const bannerUI = document.getElementById("banner-ui");
+        bannerUI.classList.add("hidden");
         document.getElementById("banner-screen").style.display = "none";
         document.getElementById("result-screen").style.display = "block";
         const banner = document.getElementById("banner").value;
@@ -443,7 +463,7 @@
 
             let item;
 
-            // Trashbag cheat
+            // Trashbag
             if (cheatTrashbagActive && cheatTrashbagPullsLeft > 0 && Math.random() < 0.05) {
                 cheatTrashbagPullsLeft--;
                 item = {
@@ -479,6 +499,8 @@
         stopOneByOne = true;
         container.innerHTML = "";
         container.style.display = "none";
+        document.body.style.background = "url('images/warp.webp') no-repeat center center fixed";
+        document.body.style.backgroundSize = "cover";
         playWarpAnimation(maxRarity, () => {
             if (amount === 10) {
                 if (container.oneByOneTimeouts) {
@@ -507,11 +529,23 @@
                         const div = document.createElement("div");
                         div.className = "pull-item r" + item.rarity;
 
+                        div.classList.add("hidden-card"); // starts off-screen
+
+                        // When the card finishes sliding in, add glow
+                        div.addEventListener("transitionend", () => {
+                            if (item.rarity === 4 || item.rarity === 5) {
+                                div.classList.add("glow");
+                            }
+                        }, { once: true });
+
                         if (item.isTrash) div.style.border = "3px solid red";
 
                         div.innerHTML = `
                             <img src="${item.img}" class="pull-img">
-                            <div><strong>${item.name}</strong><br>${item.rarity} star</div>
+                            <div>
+                                <strong>${item.name}</strong><br>
+                                ${getStarImages(item.rarity)}
+                            </div>
                         `;
 
                         div.classList.add("hidden-card");
@@ -523,6 +557,10 @@
 
                     container.appendChild(row);
                 });
+                setTimeout(() => {
+                    div.classList.remove("hidden-card");
+                    div.classList.add("show");
+                }, 50);
 
                 container.style.display = "none";
                 playOneByOne(pulls, container);
@@ -548,9 +586,26 @@
                 const div = document.createElement("div");
                 div.className = "pull-item r" + item.rarity;
 
+                div.classList.add("hidden-card"); // starts off-screen
+
+                // When the card finishes sliding in, add glow
+                div.addEventListener("transitionend", () => {
+                    if (item.rarity === 4 || item.rarity === 5) {
+                        div.classList.add("glow");
+                    }
+                }, { once: true });
+
+                setTimeout(() => {
+                    div.classList.remove("hidden-card");
+                    div.classList.add("show");
+                }, 50);
+
                 div.innerHTML = `
                     <img src="${item.img}" class="pull-img">
-                    <div><strong>${item.name}</strong><br>${item.rarity} star</div>
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        ${getStarImages(item.rarity)}
+                    </div>
                 `;
 
                 div.classList.add("hidden-card");
@@ -571,19 +626,28 @@
 
     function playOneByOne(pulls, gridContainer) {
         const resultScreen = document.getElementById("result-screen");
+        const bannerUI = document.getElementById("banner-ui");
 
-        //Stop any old animation
+        // Stop any old one-by-one animation
         stopOneByOne = true;
 
-        // cleanup old reveal screens
+        // Cleanup old reveal layer
         const oldLayer = document.getElementById("fullscreen-reveal");
         if (oldLayer) oldLayer.remove();
+
+        // Stop all active ripples immediately
+        activeRipples.forEach(r => {
+            clearTimeout(r.dataset.timeout);
+            r.remove();
+        });
+        activeRipples = [];
 
         stopOneByOne = false;
         oneByOneRunning = true;
 
         let index = 0;
 
+        // Fullscreen layer for showing items
         const revealLayer = document.createElement("div");
         revealLayer.id = "fullscreen-reveal";
         resultScreen.appendChild(revealLayer);
@@ -596,20 +660,26 @@
             const wrapper = document.createElement("div");
             wrapper.className = "hsr-single r" + item.rarity;
 
+            const isCharacter = !item.img.includes("lc");
+            const imgSize = isCharacter ? "1200px" : "400px";
+
             wrapper.innerHTML = `
                 <div class="hsr-layout">
                     <div class="hsr-name">
                         <h1>${item.name}</h1>
-                        <p>${item.rarity} ★</p>
+                        <p>
+                            ${'<img src="images/star.png" style="width:15px; height:15px; margin-right:2px;">'.repeat(item.rarity)}
+                        </p>
                     </div>
                     <div class="hsr-image">
-                        <img src="${item.img}">
+                        <img src="${item.img}" style="width:${imgSize}; height:auto;">
                     </div>
                 </div>
             `;
 
             revealLayer.appendChild(wrapper);
 
+            // Show wrapper with slight delay for fade-in effect
             setTimeout(() => {
                 if (!stopOneByOne) wrapper.classList.add("show");
             }, 30);
@@ -618,11 +688,12 @@
         function finishOneByOne() {
             oneByOneRunning = false;
 
+            // Remove reveal layer
             revealLayer.remove();
+
+            // Show the grid of all items
             gridContainer.style.display = "block";
-
             const cards = gridContainer.querySelectorAll(".pull-item");
-
             cards.forEach((card, i) => {
                 card.classList.remove("hidden-card");
                 setTimeout(() => card.classList.add("show"), 100 * i);
@@ -630,25 +701,41 @@
         }
 
         function next() {
+            // If stopping early, end immediately
             if (stopOneByOne) {
+                // Remove all ripples instantly
+                activeRipples.forEach(r => {
+                    clearTimeout(r.dataset.timeout);
+                    r.remove();
+                });
+                activeRipples = [];
+
                 finishOneByOne();
                 return;
             }
 
+            // If all pulls have been revealed, finish
             if (index >= pulls.length) {
                 finishOneByOne();
                 return;
             }
 
+            // Create ripple for current item
+            createRipple(pulls[index].rarity);
+
+            // Show the current item
             showItem(pulls[index]);
+
             index++;
         }
 
+        // Clicking anywhere goes to next item
         document.onclick = () => {
             if (!oneByOneRunning) return;
             next();
         };
 
+        // Start first item
         next();
     }
 
@@ -880,6 +967,21 @@
             clickTimes = [];
         }
     });
+
+    function createRipple(rarity) {
+        const ripple = document.createElement("div");
+        ripple.className = `ripple-effect ripple-${rarity}`;
+        document.body.appendChild(ripple);
+
+        activeRipples.push(ripple);
+
+        const timeout = setTimeout(() => {
+            ripple.remove();
+            activeRipples = activeRipples.filter(r => r !== ripple);
+        }, 1000);
+
+        ripple.dataset.timeout = timeout;
+    }
 
     document.getElementById("banner").addEventListener("change", updateBannerImage);
     updateBannerImage();
