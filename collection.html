@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HSR Collection</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon.png" type="image/png">
+    <style>
+        body {
+            background: url('images/background.webp') no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #collection-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            justify-items: center;
+        }
+        .collection-entry {
+            background: rgba(20, 20, 20, 0.85);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            width: 160px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .collection-entry:hover {
+            transform: scale(1.05);
+        }
+        .collection-entry img {
+            width: 120px;
+            height: auto;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+        .back-button {
+            display: block;
+            margin: 0 auto 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #333;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<h1>My HSR Collection</h1>
+<button class="warp-button" onclick="window.location.href='index.html'">← Back to Banner</button>
+
+<div id="collection-container"></div>
+
+<script src="bannerPools.js"></script>
+
+<script>
+window.onload = () => {
+    const collection = JSON.parse(localStorage.getItem("hsrCollection") || "{}");
+    const container = document.getElementById("collection-container");
+
+    if (Object.keys(collection).length === 0) {
+        container.innerHTML = "<p>No items in your collection yet!</p>";
+        return;
+    }
+
+    // Combine all arrays into one
+    const allItems = [
+        ...standard5,
+        ...standardlc5,
+        ...all4,
+        ...lightcones3,
+        ...lightcones4,
+        ...seeleLimited5,
+        ...seeleLimited4,
+        ...seelelcLimited5,
+        ...seelelcLimited4,
+        ...jingyuanLimited5,
+        ...jingyuanLimited4,
+        ...jingyuanlcLimited5,
+        ...jingyuanlcLimited4,
+        ...silverWolfLimited5,
+        ...silverWolfLimited4,
+        ...silverWolflcLimited5,
+        ...silverWolflcLimited4
+    ];
+
+    // Map character names to their 3D pages
+    const modelPages = {
+        "Jing Yuan": "characterModel/jing_yuan.html",
+        "Seele": "characterModel/seele.html",
+        "Silver Wolf": "characterModel/silver_wolf.html",
+        "Asta": "characterModel/asta.html",
+        "Serval": "characterModel/serval.html",
+        "Natasha": "characterModel/natasha.html",
+        "Hook": "characterModel/hook.html", //no
+        "Pela": "characterModel/pela.html", //no
+        "March 7th": "characterModel/march_7th.html",
+        "Tingyun": "characterModel/tingyun.html",
+        "Sushang": "characterModel/sushang.html",
+        "Sampo": "characterModel/sampo.html",
+        "Qingque": "characterModel/qingque.html",
+        "Dan Heng": "characterModel/dan_heng.html",
+        "Welt": "characterModel/welt.html",
+        "Gepard": "characterModel/gepard.html",
+        "Himeko": "characterModel/himeko.html",
+        "Yanqing": "characterModel/yanqing.html",
+        "Clara": "characterModel/clara.html",
+        "Bronya": "characterModel/bronya.html",
+        "Bailu": "characterModel/bailu.html"
+    };
+
+    Object.entries(collection).forEach(([name, count]) => {
+        let item = allItems.find(i => i.name === name);
+        let img = item ? item.img : "images/default.png";
+
+        const div = document.createElement("div");
+        div.className = "collection-entry";
+        div.innerHTML = `
+            <img src="${img}" alt="${name}">
+            <div><strong>${name}</strong></div>
+            <div>Owned: ${count}</div>
+        `;
+
+        // If a 3D page exists for this character, make it clickable
+        if (modelPages[name]) {
+            div.onclick = () => {
+                window.location.href = modelPages[name];
+            };
+        }
+
+        container.appendChild(div);
+    });
+};
+</script>
+
+</body>
+</html>
