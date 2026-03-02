@@ -2,19 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>HSR Warp Simulator</title>
+    <title>Warp Simulator</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon.png" type="image/png">
 </head>
 <body>
 
 <div id="banner-ui">
-    <h1>HSR Warp Simulator</h1>
+    <div id="currency-bar">
+        <div class="currency">
+            <img src="https://starrail.honeyhunterworld.com/img/item/star-rail-special-pass-item_icon_figure.webp">
+            <span id="pull-count">0</span>
+        </div>
+
+        <div class="currency">
+            <img src="https://static.wikia.nocookie.net/houkai-star-rail/images/d/d9/Item_Stellar_Jade.png">
+            <span id="jade-count">0</span>
+        </div>
+    </div>
+
+    <h1>Warp Simulator</h1>
 
     <!-- Banner selection -->
-    <div>
-        <label><strong>Select Banner:</strong></label><br>
-        <select id="banner">
+    <div style="margin-top: 20px;">
+        <label for="banner" class="warp-button" style="cursor: default;">
+            Select Banner:
+        </label>
+        <select id="banner" class="warp-button" style="padding: 8px 20px; font-size: 16px; border-radius: 25px; border: 2px solid #d5d5d5; background: linear-gradient(135deg, #ffffff, #ffffff); color: #000; cursor: pointer;">
             <option value="standard">Standard Banner</option>
             <option value="seele">Seele Character Banner 1.0</option>
             <option value="seelelc">Seele Light Cone Banner 1.0</option>
@@ -24,11 +38,20 @@
             <option value="silverwolflc">Silver Wolf Light Cone Banner 1.1</option>
         </select>
     </div>
+
+    <div>
+        <button class="warp-button" onclick="window.location.href='setting.html'" 
+            style="position: fixed; top: 10px; right: 10px; z-index: 1000;">
+            <img src="setting.webp" style="width:40px; height:40px;">
+        </button>
+    </div>
+
+    <img id="cheat-icon" src="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon2.png" style="position:fixed; top:10px; left:10px; width:40px; height:40px; cursor:pointer; z-index:9999;">
+
+    <input id="cheat-input" type="text" placeholder="Enter code..." style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); padding:10px 15px; font-size:16px; border-radius:10px; display:none; z-index:9999;">
 </div>
 
-<img id="cheat-icon" src="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon2.png" style="position:fixed; top:10px; left:10px; width:40px; height:40px; cursor:pointer; z-index:9999;">
 
-<input id="cheat-input" type="text" placeholder="Enter code..." style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); padding:10px 15px; font-size:16px; border-radius:10px; display:none; z-index:9999;">
 
 <div id="banner-screen">
 
@@ -77,16 +100,32 @@
 <script src="bannerPools.js"></script>
 
 <script>
+    // --- Currency System --- //
+    let pulls = parseInt(localStorage.getItem("hsrPulls")) || 200;
+    let jades = parseInt(localStorage.getItem("hsrJades")) || 4000;
+
+    function saveCurrency() {
+        localStorage.setItem("hsrPulls", pulls);
+        localStorage.setItem("hsrJades", jades);
+    }
+
+    function updateCurrencyUI() {
+        document.getElementById("pull-count").innerText = pulls;
+        document.getElementById("jade-count").innerText = jades;
+    }
+
+    window.addEventListener("load", updateCurrencyUI);
+
     let historyStandard = [];
     let historyLimited = [];
     let historyLightcone = [];
 
-    // Rates (approx HSR)
-    const rates = {
-        r5: 0.006,
-        r4: 0.051,
-        r3: 1 - (0.006 + 0.051)
-    };
+    window.onload = () => {
+        history = JSON.parse(localStorage.getItem("hsrHistory") || "[]");
+        historyLimited = JSON.parse(localStorage.getItem("hsrHistoryLimited") || "[]");
+        historyLightcone = JSON.parse(localStorage.getItem("hsrHistoryLightcone") || "[]");
+        historyStandard = JSON.parse(localStorage.getItem("hsrHistoryStandard") || "[]");
+    }
 
     // Pity counters
     let pity5 = 0;
@@ -122,24 +161,42 @@
         document.body.style.background = "url('images/background.webp') no-repeat center center fixed";
     }
 
+    function getRates() {
+        const r5 = parseFloat(localStorage.getItem("rate5")) || 0.006;
+        const r4 = 0.051; // fixed for now
+        const r3 = 1 - (r5 + r4);
+        return { r5, r4, r3 };
+    }
+
+    function getMaxPity5() {
+        return parseInt(localStorage.getItem("maxPity5")) || 90;
+    }
+
+    function getFeaturedChance() {
+        return parseFloat(localStorage.getItem("featuredChance")) || 0.5;
+    }
+
     // Gacha
     function rollRarity() {
+        const rates = getRates();
+        const maxPity5 = getMaxPity5();
+
         pity5++;
         pity4++;
 
-        // Hard pity for 5 star
-        if (pity5 >= 90) return 5;
+        // Hard pity for 5-star
+        if (pity5 >= maxPity5) return 5;
 
-        // Soft pity 5 star (starting around 75)
+        // Soft pity for 5-star starting ~75
         if (pity5 > 74) {
             let softRate = rates.r5 + (pity5 - 74) * 0.06;
             if (Math.random() < softRate) return 5;
         }
 
-        // Hard pity 4 star
+        // Hard pity for 4-star
         if (pity4 >= 10) return 4;
 
-        // Roll normally
+        // Normal roll
         let r = Math.random();
         if (r < rates.r5) return 5;
         if (r < rates.r5 + rates.r4) return 4;
@@ -351,9 +408,33 @@
     let stopOneByOne = false;
     let oneByOneRunning = false;
     let activeRipples = [];
+    
 
     // Warp + Animations
     function warp(amount) {
+        const passCost = amount;
+        const jadeCostPerPull = 160;
+        let requiredPasses = amount;
+
+        if (pulls >= requiredPasses) {
+            pulls -= requiredPasses;
+        } else {
+            requiredPasses -= pulls;
+            pulls = 0;
+
+            const jadeNeeded = requiredPasses * jadeCostPerPull;
+
+            if (jades < jadeNeeded) {
+                alert("Not enough Stellar Jades!");
+                return;
+            }
+
+            jades -= jadeNeeded;
+        }
+
+        saveCurrency();
+        updateCurrencyUI();
+
         const bannerUI = document.getElementById("banner-ui");
         bannerUI.classList.add("hidden");
         document.getElementById("banner-screen").style.display = "none";
@@ -362,7 +443,7 @@
         const container = document.querySelector("#result-screen #pull-container");
         container.innerHTML = "";
 
-        let pulls = [];
+        let rolledItems  = [];
         let maxRarity = 3;
 
         for (let i = 0; i < amount; i++) {
@@ -392,7 +473,7 @@
                 item = getItem(rarity, banner);
             }
 
-            pulls.push(item);
+            rolledItems.push(item);
             history.push(item);
 
             if (banner === "seele" || banner === "jingyuan" || banner === "silverwolf") {
@@ -403,6 +484,10 @@
                 historyStandard.push(item);
             }
 
+            localStorage.setItem("hsrHistory", JSON.stringify(history));
+            localStorage.setItem("hsrHistoryLimited", JSON.stringify(historyLimited));
+            localStorage.setItem("hsrHistoryLightcone", JSON.stringify(historyLightcone));
+            localStorage.setItem("hsrHistoryStandard", JSON.stringify(historyStandard));
             if (!collection[item.name]) collection[item.name] = 0;
             collection[item.name]++;
 
@@ -441,7 +526,7 @@
                     row.style.margin = "30px 0";
 
                     for (let j = 0; j < rowCount; j++) {
-                        const item = pulls[idx];
+                        const item = rolledItems[idx];
 
                         const div = document.createElement("div");
                         div.className = "pull-item r" + item.rarity;
@@ -480,14 +565,14 @@
                 }, 50);
 
                 container.style.display = "none";
-                playOneByOne(pulls, container);
+                playOneByOne(rolledItems, container);
 
             } else {
                 // Single pulls
                 container.innerHTML = "";
                 container.style.display = "block";
 
-                const item = pulls[0];
+                const item = rolledItems[0];
 
                 // Create row container
                 const row = document.createElement("div");
@@ -541,7 +626,7 @@
         });
     }
 
-    function playOneByOne(pulls, gridContainer) {
+    function playOneByOne(rolledItems, gridContainer) {
         const resultScreen = document.getElementById("result-screen");
         const bannerUI = document.getElementById("banner-ui");
 
@@ -632,16 +717,16 @@
             }
 
             // If all pulls have been revealed, finish
-            if (index >= pulls.length) {
+            if (index >= rolledItems.length) {
                 finishOneByOne();
                 return;
             }
 
             // Create ripple for current item
-            createRipple(pulls[index].rarity);
+            createRipple(rolledItems[index].rarity);
 
             // Show the current item
-            showItem(pulls[index]);
+            showItem(rolledItems[index]);
 
             index++;
         }
