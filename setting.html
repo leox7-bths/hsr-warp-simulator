@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Config</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon.png" type="image/png">
+</head>
+<body>
+
+<div class="top-buttons">
+    <button class="warp-button" onclick="window.location.href='index.html'">← Back</button>
+</div>
+
+<h1>Config</h1>
+
+<div class="config-group">
+    <label class="warp-button" for="rate5">5-Star Base Rate (0-1):</label>
+    <input type="number" step="0.001" min="0" max="1" id="rate5">
+</div>
+
+<div class="config-group">
+    <label class="warp-button" for="maxPity5">5-Star Max Pity:</label>
+    <input type="number" step="1" min="1" id="maxPity5">
+</div>
+
+<div class="config-group">
+    <label class="warp-button" for="featuredChance">Chance to Get Featured Item (0-1):</label>
+    <input type="number" step="0.01" min="0" max="1" id="featuredChance">
+</div>
+
+<div class="config-group">
+    <button class="warp-button" id="saveConfig">Save Settings</button>
+    <button class="warp-button" id="resetConfig">Reset to Default</button>
+</div>
+
+<div class="config-group">
+    <button class="clearData" id="clearData" id="saveConfig">Clear Data</button>
+</div>
+
+<script src="bannerPools.js"></script>
+<script>
+    // Default config values
+    const defaultConfig = {
+        rate5: 0.006,
+        maxPity5: 90,
+        featuredChance: 0.5
+    };
+
+    // Load config from localStorage or defaults
+    const config = JSON.parse(localStorage.getItem("hsrConfig") || JSON.stringify(defaultConfig));
+
+    // Fill inputs with current values
+    document.getElementById("rate5").value = config.rate5;
+    document.getElementById("maxPity5").value = config.maxPity5;
+    document.getElementById("featuredChance").value = config.featuredChance;
+
+    // Save button
+    document.getElementById("saveConfig").addEventListener("click", () => {
+        const newConfig = {
+            rate5: parseFloat(document.getElementById("rate5").value),
+            maxPity5: parseInt(document.getElementById("maxPity5").value),
+            featuredChance: parseFloat(document.getElementById("featuredChance").value)
+        };
+
+        localStorage.setItem("hsrConfig", JSON.stringify(newConfig));
+        alert("Settings saved!");
+    });
+
+    // Reset button
+    document.getElementById("resetConfig").addEventListener("click", () => {
+        localStorage.setItem("hsrConfig", JSON.stringify(defaultConfig));
+        document.getElementById("rate5").value = defaultConfig.rate5;
+        document.getElementById("maxPity5").value = defaultConfig.maxPity5;
+        document.getElementById("featuredChance").value = defaultConfig.featuredChance;
+        alert("Settings reset to default!");
+    });
+
+    // Clear all localStorage data
+    document.getElementById("clearData").addEventListener("click", () => {
+        if (confirm("Are you sure you want to clear all data? This cannot be undone.")) {
+            localStorage.clear();
+            alert("All data cleared!");
+            location.reload(); // optional: reload to reset inputs
+        }
+    });
+</script>
+
+</body>
+</html>
