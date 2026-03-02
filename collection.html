@@ -2,79 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>HSR Collection</title>
+    <title>Collection</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon.png" type="image/png">
-    <style>
-        body {
-            background: url('images/background.webp') no-repeat center center fixed;
-            background-size: cover;
-            color: white;
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        #collection-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px;
-            justify-items: center;
-        }
-        .collection-entry {
-            background: rgba(20, 20, 20, 0.85);
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            width: 160px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .collection-entry:hover {
-            transform: scale(1.05);
-        }
-        .collection-entry img {
-            width: 120px;
-            height: auto;
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-        .back-button {
-            display: block;
-            margin: 0 auto 20px auto;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 10px;
-            cursor: pointer;
-            background: #333;
-            color: white;
-            border: none;
-        }
-    </style>
 </head>
 <body>
 
-<h1>My HSR Collection</h1>
+<h1>Collection</h1>
 <button class="warp-button" onclick="window.location.href='index.html'">← Back to Banner</button>
 
-<div id="collection-container"></div>
+
+<!-- CHARACTERS TAB -->
+<div class="tab" onclick="toggleTab('characters-tab')">Characters</div>
+<div id="characters-tab" class="tab-content">
+    <div id="character-container"></div>
+</div>
+
+<!-- LIGHT CONES TAB -->
+<div class="tab" onclick="toggleTab('lightcones-tab')">Light Cones</div>
+<div id="lightcones-tab" class="tab-content">
+    <div id="lightcone-container"></div>
+</div>
+
 
 <script src="bannerPools.js"></script>
 
 <script>
+const rarityColors = {
+    3: "#4a90e2",
+    4: "#9b59b6",
+    5: "#f1c40f"
+};
+
+// TAB OPEN/CLOSE
+function toggleTab(id) {
+    const tab = document.getElementById(id);
+    const header = tab.previousElementSibling;
+
+    if (tab.style.display === "block") {
+        tab.style.display = "none";
+        header.classList.remove("open");
+    } else {
+        tab.style.display = "block";
+        header.classList.add("open");
+    }
+}
+
+// LOAD COLLECTION
 window.onload = () => {
     const collection = JSON.parse(localStorage.getItem("hsrCollection") || "{}");
-    const container = document.getElementById("collection-container");
+
+    const characterContainer = document.getElementById("character-container");
+    const lightconeContainer = document.getElementById("lightcone-container");
 
     if (Object.keys(collection).length === 0) {
-        container.innerHTML = "<p>No items in your collection yet!</p>";
+        characterContainer.innerHTML = "<p>No items in your collection yet!</p>";
+        lightconeContainer.innerHTML = "<p>No items in your collection yet!</p>";
         return;
     }
 
-    // Combine all arrays into one
     const allItems = [
         ...standard5,
         ...standardlc5,
@@ -95,7 +81,19 @@ window.onload = () => {
         ...silverWolflcLimited4
     ];
 
-    // Map character names to their 3D pages
+    const lightconeArrays = new Set([
+        ...standardlc5,
+        ...lightcones3,
+        ...lightcones4,
+        ...seelelcLimited5,
+        ...seelelcLimited4,
+        ...jingyuanlcLimited5,
+        ...jingyuanlcLimited4,
+        ...silverWolflcLimited5,
+        ...silverWolflcLimited4
+    ].map(i => i.name));
+
+    // 3D model redirect map
     const modelPages = {
         "Jing Yuan": "characterModel/jing_yuan.html",
         "Seele": "characterModel/seele.html",
@@ -120,27 +118,58 @@ window.onload = () => {
         "Bailu": "characterModel/bailu.html"
     };
 
+    // Split into characters / light cones based on detection
+    let characters = [];
+    let lightcones = [];
+
     Object.entries(collection).forEach(([name, count]) => {
         let item = allItems.find(i => i.name === name);
-        let img = item ? item.img : "images/default.png";
+        if (!item) return;
 
-        const div = document.createElement("div");
-        div.className = "collection-entry";
-        div.innerHTML = `
-            <img src="${img}" alt="${name}">
-            <div><strong>${name}</strong></div>
-            <div>Owned: ${count}</div>
-        `;
-
-        // If a 3D page exists for this character, make it clickable
-        if (modelPages[name]) {
-            div.onclick = () => {
-                window.location.href = modelPages[name];
-            };
+        if (lightconeArrays.has(name)) {
+            lightcones.push({ ...item, count });
+        } else {
+            characters.push({ ...item, count });
         }
-
-        container.appendChild(div);
     });
+
+    // SORT BY RARITY (desc) THEN NAME (asc)
+    function sortByRarityThenName(list) {
+        return list.sort((a, b) => {
+            if (b.rarity !== a.rarity) {
+                return b.rarity - a.rarity; //rarity
+            } else {
+                return a.name.localeCompare(b.name); //alphabetical
+            }
+        });
+    }
+
+    characters = sortByRarityThenName(characters);
+    lightcones = sortByRarityThenName(lightcones);
+
+    function render(list, container) {
+        list.forEach(entry => {
+            const div = document.createElement("div");
+            div.className = "collection-entry";
+            // set the rarity color as a CSS variable for the ::after gradient
+            div.style.setProperty("--rarity-color", rarityColors[entry.rarity] || "#fff");
+
+            div.innerHTML = `
+                <img src="${entry.img}">
+                <div><strong>${entry.name}</strong></div>
+                <div>Owned: ${entry.count}</div>
+            `;
+
+            if (modelPages[entry.name]) {
+                div.onclick = () => window.location.href = modelPages[entry.name];
+            }
+
+            container.appendChild(div);
+        });
+    }
+
+    render(characters, characterContainer);
+    render(lightcones, lightconeContainer);
 };
 </script>
 
