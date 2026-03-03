@@ -601,3 +601,31 @@ button:hover {
     width: 30px;
     height: 30px;
 }
+
+/* Flash overlay */
+.flash-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0;
+    animation: flashAnim 0.35s ease-out forwards;
+}
+
+/* Different rarity colors */
+.flash-3 {
+    background: radial-gradient(circle, rgba(120,180,255,0.9) 0%, rgba(0,0,0,0) 70%);
+}
+
+.flash-4 {
+    background: radial-gradient(circle, rgba(180,120,255,0.95) 0%, rgba(0,0,0,0) 70%);
+}
+
+.flash-5 {
+    background: radial-gradient(circle, rgba(255,215,0,1) 0%, rgba(255,255,255,0.6) 40%, rgba(0,0,0,0) 75%);
+}
+
+@keyframes flashAnim {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+}
