@@ -626,6 +626,14 @@
         });
     }
 
+    async function sha256(text) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
     function playOneByOne(rolledItems, gridContainer) {
         const resultScreen = document.getElementById("result-screen");
         const bannerUI = document.getElementById("banner-ui");
@@ -884,6 +892,14 @@
         return `${r},${g},${b}`;
     }
 
+    const CHEATS = {
+        one: "db9fbddbd7caeff7a326645c1bb47116eb3fd4ae3834bf5039fc5d47386786f5",
+        two: "e80fb1fe98f7b42f92ac21414b9a56772cf586e9c48bb1c688a421cfa96501e2",
+        three: "47032622e20b741b293bd1fe1430229d032868cd769075f0a62ac9e985242fd9",
+        four: "c14e09e2ecffd5199ed54bb3f0ae8624422ed11570c6ae44f7ba58ad0df56790",
+        five: "833fb3d07680eaf13e05f31459d09dbe33a54ab9a21dc1e6b1712db34c538d86"
+    };
+
     function updateHistory() {
         const h = document.getElementById("history");
         h.innerHTML = history.map(i =>
@@ -920,26 +936,60 @@
         }
     });
 
-    cheatInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            if (cheatInput.value.toUpperCase() === "LUCKY") {
-                alert("Cheat activated! Next 10 pulls are all guaranteed 5 star!");
-                cheat10x5Star = true;
-            }
-            if (cheatInput.value.toUpperCase() === "DIOLATASUCKS") {
-                alert("Challenge activated! Next 100 pulls there is the chance to get a trashbag (which will not let a five character appear for the next 10 pull)!");
-                cheatTrashbagActive = true;
-                cheatTrashbagPullsLeft = 100;
-            }
-            if (cheatInput.value.toUpperCase() === "GUARANTEE") {
-                alert("Cheat activated! Next 5 star will be the featured character/light cone!");
-                cheatGuaranteeNext5 = true;
-            }
-            cheatInput.value = "";
-            cheatInput.style.display = "none";
-            cheatActive = false;
-            clickTimes = [];
+    cheatInput.addEventListener("keydown", async (e) => {
+        if (e.key !== "Enter") return;
+
+        const input = cheatInput.value.trim().toLowerCase();
+        const hashed = await sha256(input);
+
+        if (hashed === CHEATS.one) {
+            alert("Cheat activated! Next 10 pulls are all guaranteed 5 star!");
+            cheat10x5Star = true;
         }
+
+        else if (hashed === CHEATS.two) {
+            alert("Challenge activated! Trashbag mode enabled!");
+            cheatTrashbagActive = true;
+            cheatTrashbagPullsLeft = 100;
+        }
+
+        else if (hashed === CHEATS.three) {
+            alert("Cheat activated! Next 5 star will be featured!");
+            cheatGuaranteeNext5 = true;
+        }
+
+        else if (hashed === CHEATS.four) {
+            jades += 16000;
+            saveCurrency();
+            updateCurrencyUI();
+            alert("Cheat activated! +16000 Stellar Jades!");
+        }
+
+        else if (hashed === CHEATS.five) {
+            // Combine all 4 star character pools
+            const allFourCharacters = [
+                ...all4
+            ];
+
+            // Load collection
+            let coll = JSON.parse(localStorage.getItem("hsrCollection") || "{}");
+
+            // Add each 4 star character once
+            allFourCharacters.forEach(item => {
+                if (!coll[item.name]) {
+                    coll[item.name] = 1;
+                }
+            });
+
+            localStorage.setItem("hsrCollection", JSON.stringify(coll));
+
+            alert("Cheat activated! All 4★ characters unlocked!");
+        }
+
+        cheatInput.value = "";
+        cheatInput.style.display = "none";
+        cheatActive = false;
+        clickTimes = [];
     });
 
     function createRipple(rarity) {
