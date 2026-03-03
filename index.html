@@ -943,12 +943,23 @@
     });
 
     function createRipple(rarity) {
+        // Create ripple
         const ripple = document.createElement("div");
         ripple.className = `ripple-effect ripple-${rarity}`;
         document.body.appendChild(ripple);
-
         activeRipples.push(ripple);
 
+        // Create flash
+        const flash = document.createElement("div");
+        flash.className = `flash-overlay flash-${rarity}`;
+        document.body.appendChild(flash);
+
+        // Remove flash automatically after animation
+        setTimeout(() => {
+            flash.remove();
+        }, 350);
+
+        // Remove ripple after 1s
         const timeout = setTimeout(() => {
             ripple.remove();
             activeRipples = activeRipples.filter(r => r !== ripple);
