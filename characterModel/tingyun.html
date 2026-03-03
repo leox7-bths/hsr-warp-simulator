@@ -1,21 +1,138 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <script type="module"
-      src="https://unpkg.com/@google/model-viewer@latest/dist/model-viewer.min.js">
-    </script>
+    <title>Model</title>
     <link rel="stylesheet" href="../style.css">
     <link rel="icon" href="https://raw.githubusercontent.com/leox7-bths/hsr-warp-simulator/refs/heads/main/icon.png" type="image/png">
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@v0.163.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@v0.163.0/examples/jsm/"
+      }
+    }
+    </script>
   </head>
+<body>
+  <div id="top-bar">
+    <button class="warp-button" onclick="window.location.href='../collection.html'">
+      ← Back to Collection
+    </button>
+  </div>
 
-  <body>
-    <button class="warp-button" onclick="window.location.href='../collection.html'">← Back to Collection</button>
-    <model-viewer src="tingyun.glb"
-                  alt="3D Character"
-                  camera-controls
-                  exposure="1"
-                  shadow-intensity="1"
-                  style="width: 1500px; height: 600px;">
-    </model-viewer>
-  </body>
+  <div id="progress-container">
+    <div id="progress">Loading Model...</div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    document.body.appendChild(renderer.domElement);
+
+    // Scene
+    const scene = new THREE.Scene();
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(4, 3, 7);
+
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.enableZoom = true;
+    controls.enablePan = true;            
+    controls.minDistance = 1;
+    controls.maxDistance = 50;
+    controls.target.set(0, 1, 0);
+    controls.update();
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: THREE.MOUSE.PAN
+    };
+
+    // Lights
+    const ambient = new THREE.AmbientLight(0xffffff, 1.5);
+    scene.add(ambient);
+
+    const directional = new THREE.DirectionalLight(0xffffff, 2.0);
+    directional.position.set(5, 10, 5);
+    scene.add(directional);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    keyLight.position.set(-5, 5, 5);
+    scene.add(keyLight);
+
+    // Load GLB model
+    const loader = new GLTFLoader();
+    loader.load('tingyun.glb',
+      (gltf) => {
+        const model = gltf.scene;
+
+        // Convert all meshes to MeshToonMaterial
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            const oldMat = child.material;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 1;
+            const ctx = canvas.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, 256, 0);
+            grad.addColorStop(0.0, '#ffffff');
+            grad.addColorStop(0.5, '#888888');
+            grad.addColorStop(1.0, '#000000');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 256, 1);
+
+            const gradientMap = new THREE.CanvasTexture(canvas);
+            gradientMap.minFilter = THREE.NearestFilter;
+            gradientMap.magFilter = THREE.NearestFilter;
+
+            child.material = new THREE.MeshToonMaterial({
+              color: oldMat.color || new THREE.Color(0xffffff),
+              map: oldMat.map || null,
+              gradientMap: gradientMap
+            });
+          }
+        });
+
+        model.position.set(0, 0, 0);
+        scene.add(model);
+
+        const prog = document.getElementById('progress-container');
+        if (prog) prog.style.display = 'none';
+      },
+      (xhr) => console.log(`Loading: ${Math.round(xhr.loaded / xhr.total * 100)}%`),
+      (error) => console.error(error)
+    );
+
+    // Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Animate
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
 </html>
