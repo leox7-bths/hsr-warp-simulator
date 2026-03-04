@@ -99,6 +99,8 @@
 
 <script src="bannerPools.js"></script>
 
+<audio id="warp-sound" src="music/warp_sounds.mp3"></audio>
+
 <script>
     // --- Currency System --- //
     let pulls = parseInt(localStorage.getItem("hsrPulls")) || 200;
@@ -665,6 +667,9 @@
         function showItem(item) {
             if (stopOneByOne) return;
 
+            document.getElementById('warp-sound').load()
+            document.getElementById('warp-sound').play()
+
             revealLayer.innerHTML = "";
 
             const wrapper = document.createElement("div");
@@ -897,7 +902,8 @@
         two: "e80fb1fe98f7b42f92ac21414b9a56772cf586e9c48bb1c688a421cfa96501e2",
         three: "47032622e20b741b293bd1fe1430229d032868cd769075f0a62ac9e985242fd9",
         four: "c14e09e2ecffd5199ed54bb3f0ae8624422ed11570c6ae44f7ba58ad0df56790",
-        five: "833fb3d07680eaf13e05f31459d09dbe33a54ab9a21dc1e6b1712db34c538d86"
+        five: "c8042be39230c1c894dd2837e0fc355ba4aa9b9d0b0a1824a590e4fea81be6a3",
+        six: "833fb3d07680eaf13e05f31459d09dbe33a54ab9a21dc1e6b1712db34c538d86"
     };
 
     function updateHistory() {
@@ -966,6 +972,30 @@
         }
 
         else if (hashed === CHEATS.five) {
+            // Combine all 5 star character pools
+            const allFiveCharacters = [
+                ...standard5,
+                ...seeleLimited5,
+                ...jingyuanLimited5,
+                ...silverWolfLimited5
+            ];
+
+            // Load collection
+            let coll = JSON.parse(localStorage.getItem("hsrCollection") || "{}");
+
+            // Add each 5 star character once
+            allFiveCharacters.forEach(item => {
+                if (!coll[item.name]) {
+                    coll[item.name] = 1;
+                }
+            });
+
+            localStorage.setItem("hsrCollection", JSON.stringify(coll));
+
+            alert("Cheat activated! All 5★ characters unlocked!");
+        }
+
+        else if (hashed === CHEATS.six) {
             // Combine all 4 star character pools
             const allFourCharacters = [
                 ...all4
