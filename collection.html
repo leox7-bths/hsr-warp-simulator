@@ -24,6 +24,12 @@
     <div id="lightcone-container"></div>
 </div>
 
+<!-- LIGHTCONE IMAGE MODAL -->
+<div id="lightcone-modal" class="modal">
+    <span class="close-modal">&times;</span>
+    <img class="modal-content" id="modal-img">
+</div>
+
 
 <script src="bannerPools.js"></script>
 
@@ -78,7 +84,8 @@ window.onload = () => {
         ...silverWolfLimited5,
         ...silverWolfLimited4,
         ...silverWolflcLimited5,
-        ...silverWolflcLimited4
+        ...silverWolflcLimited4,
+        ...fireflyLimited5
     ];
 
     const lightconeArrays = new Set([
@@ -115,7 +122,8 @@ window.onload = () => {
         "Yanqing": "characterModel/yanqing.html",
         "Clara": "characterModel/clara.html",
         "Bronya": "characterModel/bronya.html",
-        "Bailu": "characterModel/bailu.html"
+        "Bailu": "characterModel/bailu.html",
+        "Firefly": "characterModel/firefly.html"
     };
 
     // Split into characters / light cones based on detection
@@ -133,6 +141,19 @@ window.onload = () => {
         }
     });
 
+    // CLOSE MODAL
+    document.querySelector(".close-modal").onclick = function() {
+        document.getElementById("lightcone-modal").style.display = "none";
+    };
+
+    // Close when clicking outside image
+    window.onclick = function(event) {
+        const modal = document.getElementById("lightcone-modal");
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    };
+
     // SORT BY RARITY (desc) THEN NAME (asc)
     function sortByRarityThenName(list) {
         return list.sort((a, b) => {
@@ -147,11 +168,10 @@ window.onload = () => {
     characters = sortByRarityThenName(characters);
     lightcones = sortByRarityThenName(lightcones);
 
-    function render(list, container) {
+    function render(list, container, isLightcone = false) {
         list.forEach(entry => {
             const div = document.createElement("div");
             div.className = "collection-entry";
-            // set the rarity color as a CSS variable for the ::after gradient
             div.style.setProperty("--rarity-color", rarityColors[entry.rarity] || "#fff");
 
             div.innerHTML = `
@@ -160,16 +180,27 @@ window.onload = () => {
                 <div>Owned: ${entry.count}</div>
             `;
 
-            if (modelPages[entry.name]) {
+            // CHARACTER CLICK → 3D MODEL
+            if (!isLightcone && modelPages[entry.name]) {
                 div.onclick = () => window.location.href = modelPages[entry.name];
+            }
+
+            // LIGHTCONE CLICK → BIG IMAGE
+            if (isLightcone) {
+                div.onclick = () => {
+                    const modal = document.getElementById("lightcone-modal");
+                    const modalImg = document.getElementById("modal-img");
+                    modal.style.display = "block";
+                    modalImg.src = entry.img;
+                };
             }
 
             container.appendChild(div);
         });
     }
 
-    render(characters, characterContainer);
-    render(lightcones, lightconeContainer);
+    render(characters, characterContainer, false);
+    render(lightcones, lightconeContainer, true);
 };
 </script>
 
