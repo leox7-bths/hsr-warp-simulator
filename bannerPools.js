@@ -159,6 +159,10 @@ const silverWolflcLimited4 = [
     { name: "Make the World Clamor", rarity: 4, img: "s4lc/Light_Cone_Make_the_World_Clamor.webp", rate: 0.33 }
 ];
 
+const fireflyLimited5 = [
+    { name: "Firefly", rarity: 5, img: "l5c/Character_Firefly_Splash_Art.webp" }
+];
+
 //BANNER IMAGE
 const bannerImages = {
     standard: "images/Stellar_Warp.webp",
@@ -203,7 +207,7 @@ const resultImages = [
     { name: "Incessant Rain", rarity:5, img:"resultImages/incessant-rain.webp" },
     { name: "Jing Yuan", rarity:5, img:"resultImages/jing-yuan.webp" },
     { name: "Landaus Choice", rarity:4, img:"resultImages/landaus-choice.webp" },
-    { name: "Lingering Tear", rarity:3, img:"resultImages/lingering-tear.webp" },
+    { name: "Lingering Tear", rarity:3, img:"resultImages/lingering-tear.webp" }, //////no have
     { name: "Loop", rarity:3, img:"resultImages/loop.webp" },
     { name: "Make the World Clamor", rarity:4, img:"resultImages/make-the-world-clamor.webp" },
     { name: "March 7th", rarity:4, img:"resultImages/march-7th.webp" },
@@ -237,6 +241,7 @@ const resultImages = [
     { name: "Serval", rarity:4, img:"resultImages/serval.webp" },
     { name: "Sushang", rarity:4, img:"resultImages/sushang.webp" },
     { name: "Swordplay", rarity:4, img:"resultImages/swordplay.webp" },
+    { name: "Sneering", rarity:3, img:"resultImages/sneering.webp" },
     { name: "The Moles Welcome You", rarity:4, img:"resultImages/the-moles-welcome-you.webp" },
     { name: "This Is Me", rarity:4, img:"resultImages/this-is-me.webp" },
     { name: "Time Waits for No One", rarity:5, img:"resultImages/time-waits-for-no-one.webp" },
@@ -245,5 +250,6 @@ const resultImages = [
     { name: "Void", rarity:3, img:"resultImages/void.webp" },
     { name: "We Are Wildfire", rarity:4, img:"resultImages/we-are-wildfire.webp" },
     { name: "Welt", rarity:5, img:"resultImages/welt.webp" },
-    { name: "Yanqing", rarity:5, img:"resultImages/yanqing.webp" }
+    { name: "Yanqing", rarity:5, img:"resultImages/yanqing.webp" },
+    { name:"Subscribe for More!", rarity:4, img:"resultImages/subscribe-for-more.webp" }
 ];
