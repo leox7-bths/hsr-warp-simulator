@@ -101,12 +101,14 @@
     <img id="rotating-img" src="images/rings.webp">
 </div>
 
+<audio id="warp-sound" src="music/warp_sounds.mp3"></audio>
+
 <script src="bannerPools.js"></script>
 
 <script>
     // --- Currency System --- //
-    let pulls = parseInt(localStorage.getItem("hsrPulls")) || 200;
-    let jades = parseInt(localStorage.getItem("hsrJades")) || 4000;
+    let pulls = parseInt(localStorage.getItem("hsrPulls")) || 0;
+    let jades = parseInt(localStorage.getItem("hsrJades")) || 0;
 
     function saveCurrency() {
         localStorage.setItem("hsrPulls", pulls);
@@ -527,127 +529,118 @@
         playWarpAnimation(maxRarity, () => {
             if (amount === 10) {
                 container.innerHTML = "";
-                container.style.display = "block";
+                container.style.display = "none";
+                
 
-                if (amount === 10) {
+                // Create a lookup map for resultImages
+                const resultImagesMap = {};
+                resultImages.forEach(item => {
+                    resultImagesMap[item.name] = item.img;
+                });
+
+                const layout = [3, 4, 3];
+                let idx = 0;
+                container.innerHTML = "";
+
+                layout.forEach(rowCount => {
+                    const row = document.createElement("div");
+                    row.className = "row-container";
+                    row.style.display = "flex";
+                    row.style.justifyContent = "center";
+                    row.style.gap = "10px";
+                    row.style.transform = "rotate(-15deg)";
+                    row.style.transformOrigin = "center";
+                    row.style.margin = "30px 0";
+
+                    for (let j = 0; j < rowCount; j++) {
+                        const item = rolledItems[idx];
+                        
+                        // Get the result image path if available, otherwise use original
+                        const resultImagePath = resultImagesMap[item.name] || item.img;
+
+                        const div = document.createElement("div");
+                        div.className = "pull-item r" + item.rarity;
+                        div.classList.add("hidden-card");
+
+                        if (item.isTrash) div.style.border = "3px solid red";
+
+                        div.innerHTML = `<img src="${resultImagePath}" alt="${item.name}">`;
+
+                        // Glow for rare items
+                        div.addEventListener("transitionend", () => {
+                            if (item.rarity >= 4) div.classList.add("glow");
+                        }, { once: true });
+
+                        row.appendChild(div);                    
+
+                        idx++;
+                    }
+
+                    container.appendChild(row);
+                });
+
+                container.style.display = "none";
+                playOneByOne(rolledItems, container);
+
+            } else {
+                    // Single pull
                     container.innerHTML = "";
                     container.style.display = "block";
 
-                    // Create a lookup map for resultImages
+                    const item = rolledItems[0];
+
+                    // Create result image lookup map
                     const resultImagesMap = {};
-                    resultImages.forEach(item => {
-                        resultImagesMap[item.name] = item.img;
+                    resultImages.forEach(img => {
+                        resultImagesMap[img.name] = img.img;
                     });
 
-                    const layout = [3, 4, 3];
-                    let idx = 0;
-                    container.innerHTML = "";
+                    // Get correct result image
+                    const resultImagePath = resultImagesMap[item.name] || item.img;
 
-                    layout.forEach(rowCount => {
-                        const row = document.createElement("div");
-                        row.className = "row-container";
-                        row.style.display = "flex";
-                        row.style.justifyContent = "center";
-                        row.style.gap = "10px";
-                        row.style.transform = "rotate(-15deg)";
-                        row.style.transformOrigin = "center";
-                        row.style.margin = "30px 0";
+                    // Create row container
+                    const row = document.createElement("div");
+                    row.className = "row-container";
+                    row.style.display = "flex";
+                    row.style.justifyContent = "center";
+                    row.style.gap = "10px";
+                    row.style.transform = "rotate(-15deg)";
+                    row.style.transformOrigin = "center";
+                    row.style.margin = "30px 0";
 
-                        for (let j = 0; j < rowCount; j++) {
-                            const item = rolledItems[idx];
-                            
-                            // Get the result image path if available, otherwise use original
-                            const resultImagePath = resultImagesMap[item.name] || item.img;
+                    // Create card
+                    const div = document.createElement("div");
+                    div.className = "pull-item r" + item.rarity;
+                    div.classList.add("hidden-card");
 
-                            const div = document.createElement("div");
-                            div.className = "pull-item r" + item.rarity;
-                            div.classList.add("hidden-card");
+                    if (item.isTrash) div.style.border = "3px solid red";
 
-                            if (item.isTrash) div.style.border = "3px solid red";
+                    div.innerHTML = `<img src="${resultImagePath}" alt="${item.name}">`;
 
-                            div.innerHTML = `<img src="${resultImagePath}" alt="${item.name}">`;
+                    // Glow for items
+                    div.addEventListener("transitionend", () => {
+                        if (item.rarity >= 4) div.classList.add("glow");
+                    }, { once: true });
 
-                            // Glow for rare items
-                            div.addEventListener("transitionend", () => {
-                                if (item.rarity >= 4) div.classList.add("glow");
-                            }, { once: true });
+                    row.appendChild(div);
+                    container.appendChild(row);
 
-                            row.appendChild(div);
-
-                            // Animate each card in
-                            setTimeout(() => {
-                                div.classList.remove("hidden-card");
-                                div.classList.add("show");
-                            }, 50 * idx);
-
-                            idx++;
-                        }
-
-                        container.appendChild(row);
-                    });
-
+                    // Animate in
                     setTimeout(() => {
-                        container.querySelectorAll(".pull-item").forEach(div => {
-                            div.classList.remove("hidden-card");
-                            div.classList.add("show");
-                        });
+                        div.classList.remove("hidden-card");
+                        div.classList.add("show");
                     }, 50);
+                    }   
+                    updateHistory();
+                });
+    }
 
-                    container.style.display = "none";
-                    playOneByOne(rolledItems, container);
-                }
-
-            } else {
-                // Single pulls
-                container.innerHTML = "";
-                container.style.display = "block";
-
-                const item = rolledItems[0];
-
-                // Create row container
-                const row = document.createElement("div");
-                row.className = "row-container";
-                row.style.display = "flex";
-                row.style.justifyContent = "center";
-                row.style.gap = "10px";
-                row.style.transform = "rotate(-15deg)";
-                row.style.transformOrigin = "center";
-                row.style.margin = "30px 0";
-
-                // Create card
-                const div = document.createElement("div");
-                div.className = "pull-item r" + item.rarity;
-
-                div.classList.add("hidden-card"); // starts off-screen
-
-                // When the card finishes sliding in, add glow
-                div.addEventListener("transitionend", () => {
-                    if (item.rarity === 4 || item.rarity === 5) {
-                        div.classList.add("glow");
-                    }
-                }, { once: true });
-
-                setTimeout(() => {
-                    div.classList.remove("hidden-card");
-                    div.classList.add("show");
-                }, 50);
-
-                div.innerHTML = `<img src="${item.img}" alt="Result">`;
-
-                div.classList.add("hidden-card");
-
-                row.appendChild(div);
-
-                container.appendChild(row);
-
-                setTimeout(() => {
-                    div.classList.remove("hidden-card");
-                    div.classList.add("show");
-                }, 50);
-            }
-                
-            updateHistory();
-        });
+    async function sha256(text) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
     }
 
     function playOneByOne(rolledItems, gridContainer) {
@@ -680,6 +673,9 @@
 
         function showItem(item) {
             if (stopOneByOne) return;
+
+            document.getElementById('warp-sound').load()
+            document.getElementById('warp-sound').play()
 
             revealLayer.innerHTML = "";
 
@@ -908,6 +904,16 @@
         return `${r},${g},${b}`;
     }
 
+    const CHEATS = {
+        one: "db9fbddbd7caeff7a326645c1bb47116eb3fd4ae3834bf5039fc5d47386786f5",
+        two: "e80fb1fe98f7b42f92ac21414b9a56772cf586e9c48bb1c688a421cfa96501e2",
+        three: "47032622e20b741b293bd1fe1430229d032868cd769075f0a62ac9e985242fd9",
+        four: "c14e09e2ecffd5199ed54bb3f0ae8624422ed11570c6ae44f7ba58ad0df56790",
+        five: "c8042be39230c1c894dd2837e0fc355ba4aa9b9d0b0a1824a590e4fea81be6a3",
+        six: "833fb3d07680eaf13e05f31459d09dbe33a54ab9a21dc1e6b1712db34c538d86",
+        seven: "afac327e73694e68c02f5c62f3bc0bcf0f239744ff12921e781487a0f9b3d5d0"
+    };
+
     function updateHistory() {
         const h = document.getElementById("history");
         h.innerHTML = history.map(i =>
@@ -944,26 +950,104 @@
         }
     });
 
-    cheatInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            if (cheatInput.value.toUpperCase() === "LUCKY") {
-                alert("Cheat activated! Next 10 pulls are all guaranteed 5 star!");
-                cheat10x5Star = true;
-            }
-            if (cheatInput.value.toUpperCase() === "DIOLATASUCKS") {
-                alert("Challenge activated! Next 100 pulls there is the chance to get a trashbag (which will not let a five character appear for the next 10 pull)!");
-                cheatTrashbagActive = true;
-                cheatTrashbagPullsLeft = 100;
-            }
-            if (cheatInput.value.toUpperCase() === "GUARANTEE") {
-                alert("Cheat activated! Next 5 star will be the featured character/light cone!");
-                cheatGuaranteeNext5 = true;
-            }
-            cheatInput.value = "";
-            cheatInput.style.display = "none";
-            cheatActive = false;
-            clickTimes = [];
+    cheatInput.addEventListener("keydown", async (e) => {
+        if (e.key !== "Enter") return;
+
+        const input = cheatInput.value.trim().toLowerCase();
+        const hashed = await sha256(input);
+
+        if (hashed === CHEATS.one) {
+            alert("Cheat activated! Next 10 pulls are all guaranteed 5 star!");
+            cheat10x5Star = true;
         }
+
+        else if (hashed === CHEATS.two) {
+            alert("Challenge activated! Trashbag mode enabled!");
+            cheatTrashbagActive = true;
+            cheatTrashbagPullsLeft = 100;
+        }
+
+        else if (hashed === CHEATS.three) {
+            alert("Cheat activated! Next 5 star will be featured!");
+            cheatGuaranteeNext5 = true;
+        }
+
+        else if (hashed === CHEATS.four) {
+            jades += 16000;
+            saveCurrency();
+            updateCurrencyUI();
+            alert("Cheat activated! +16000 Stellar Jades!");
+        }
+
+        else if (hashed === CHEATS.five) {
+            // Combine all 5 star character pools
+            const allFiveCharacters = [
+                ...standard5,
+                ...seeleLimited5,
+                ...jingyuanLimited5,
+                ...silverWolfLimited5,
+                ...fireflyLimited5  
+            ];
+
+            // Load collection
+            let coll = JSON.parse(localStorage.getItem("hsrCollection") || "{}");
+
+            // Add each 5 star character once
+            allFiveCharacters.forEach(item => {
+                if (!coll[item.name]) {
+                    coll[item.name] = 1;
+                }
+            });
+
+            localStorage.setItem("hsrCollection", JSON.stringify(coll));
+
+            alert("Cheat activated! All 5★ characters unlocked!");
+        }
+
+        else if (hashed === CHEATS.six) {
+            // Combine all 4 star character pools
+            const allFourCharacters = [
+                ...all4
+            ];
+
+            // Load collection
+            let coll = JSON.parse(localStorage.getItem("hsrCollection") || "{}");
+
+            // Add each 4 star character once
+            allFourCharacters.forEach(item => {
+                if (!coll[item.name]) {
+                    coll[item.name] = 1;
+                }
+            });
+
+            localStorage.setItem("hsrCollection", JSON.stringify(coll));
+
+            alert("Cheat activated! All 4★ characters unlocked!");
+        }
+        else if (hashed === CHEATS.seven) {
+
+           const firefly = [
+                ...fireflyLimited5
+            ];
+
+            // Load collection
+            let coll = JSON.parse(localStorage.getItem("hsrCollection") || "{}");
+
+            // Add each 4 star character once
+            firefly.forEach(item => {
+                if (!coll[item.name]) {
+                    coll[item.name] = 1;
+                }
+            });
+
+            localStorage.setItem("hsrCollection", JSON.stringify(coll));
+
+            alert("Cheat activated! Firefly unlocked!");
+        }
+        cheatInput.value = "";
+        cheatInput.style.display = "none";
+        cheatActive = false;
+        clickTimes = [];
     });
 
     function createRipple(rarity) {
