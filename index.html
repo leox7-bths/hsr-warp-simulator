@@ -527,6 +527,7 @@
         document.body.style.background = "url('images/warp.webp') no-repeat center center fixed";
         document.body.style.backgroundSize = "cover";
         playWarpAnimation(maxRarity, () => {
+            document.getElementById("back-button").style.display = "block";
             if (amount === 10) {
                 container.innerHTML = "";
                 container.style.display = "none";
@@ -822,6 +823,7 @@
     }
     
     function playWarpAnimation(rarity, callback) {
+        document.getElementById("back-button").style.display = "none";
         const screen = document.getElementById("warp-screen");
         const ticket = document.getElementById("ticket");
         const canvas = document.getElementById("warp-canvas");
