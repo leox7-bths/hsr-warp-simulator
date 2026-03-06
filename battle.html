@@ -50,6 +50,23 @@ body { background:#111; color:#fff; font-family:sans-serif; margin:0; overflow:h
   opacity: 0;
   transition: opacity 0.5s;
 }
+
+/* Target Pointer */
+.target-pointer {
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background-color: #ffd700;
+  border-radius: 5px;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
 </style>
 </head>
 <body>
@@ -95,17 +112,60 @@ const ENEMY_IMG = "https://static.wikia.nocookie.net/houkai-star-rail/images/b/b
 let player = { hp:100, maxHp:100, shield:0, energy:0, buffs:[], sp:3, maxSp:5, img: PLAYER_IMG };
 let enemies = [
   { name:"Enemy1", hp:50, maxHp:50, shield:0, buffs:[], img: ENEMY_IMG },
-  { name:"Enemy2", hp:70, maxHp:70, shield:0, buffs:[], img: ENEMY_IMG }
+  { name:"Enemy2", hp:50, maxHp:50, shield:0, buffs:[], img: ENEMY_IMG },
+  { name:"Enemy3", hp:50, maxHp:50, shield:0, buffs:[], img: ENEMY_IMG },
+  { name:"Enemy4", hp:50, maxHp:50, shield:0, buffs:[], img: ENEMY_IMG },
+  { name:"Enemy5", hp:70, maxHp:70, shield:0, buffs:[], img: ENEMY_IMG }
 ];
-let spdOrder = ["player","Enemy1","Enemy2"];
+let spdOrder = ["player","Enemy1","Enemy2","Enemy3","Enemy4","Enemy5"];
 let currentAction = null;
 
+let currentTargetIndex = 0; // Initially target the first enemy
+
+// Show the target pointer on the selected enemy
+function updateTargetPointer() {
+  document.querySelectorAll('.target-pointer').forEach(pointer => pointer.remove());
+  
+  // Get the target enemy
+  const targetEnemyEl = document.getElementById("enemies").children[currentTargetIndex];
+
+  // Add target pointer to selected enemy
+  const targetPointer = document.createElement("div");
+  targetPointer.className = "target-pointer";
+  targetEnemyEl.appendChild(targetPointer);
+}
+
+// Handle keyboard input for target switching and actions
+function handleKeyPress(event) {
+  if (event.key === "d") {  // Move target right
+    currentTargetIndex = (currentTargetIndex + 1) % enemies.length;
+    updateTargetPointer();
+  }
+  if (event.key === "a") {  // Move target left
+    currentTargetIndex = (currentTargetIndex - 1 + enemies.length) % enemies.length;
+    updateTargetPointer();
+  }
+
+  if (event.key === "q") {  // Attack
+    chooseAction("attack");
+    targetEnemy(currentTargetIndex);
+  }
+  if (event.key === "e") {  // Skill
+    chooseAction("skill");
+    targetEnemy(currentTargetIndex);
+  }
+  if (event.key === "1") {  // Ultimate
+    chooseAction("ultimate");
+    targetEnemy(currentTargetIndex);
+  }
+}
+
 // Show combat message
-function showCombatMessage(msg, duration=3000){
+function showCombatMessage(msg, duration = 3000) {
   const msgDiv = document.getElementById("combat-message");
   msgDiv.innerText = msg;
   msgDiv.style.opacity = "1";
-  setTimeout(()=> { msgDiv.style.opacity = "0"; }, duration);
+  setTimeout(() => { msgDiv.style.opacity = "0"; }, duration);
 }
 
 // Update player UI
@@ -134,14 +194,31 @@ function updateEnemiesUI(){
 }
 
 // Update SPD / turn order
-function updateSPD(){
+function updateSPD() {
   const spdDiv = document.getElementById("spd-cycle");
   spdDiv.innerHTML = "";
-  spdOrder.forEach(char=>{
-    let img = char==="player"? player.img : ENEMY_IMG;
-    spdDiv.innerHTML += `<div class="spd-char"><img src="${img}">${char}</div>`;
+
+  spdOrder.forEach((char, i) => {
+    let img = char === "player" ? player.img : ENEMY_IMG;
+
+    const charDiv = document.createElement("div");
+    charDiv.className = "spd-char";
+
+    charDiv.innerHTML = `
+      <span style="width:20px; text-align:right; margin-right:5px; color:#aaa;">
+        ${i + 1}.
+      </span>
+      <img src="${img}">
+      <span>${char}</span>
+    `;
+
+    spdDiv.appendChild(charDiv);
   });
+  updateTargetPointer();
 }
+
+// Bind keypress event listener
+document.addEventListener("keydown", handleKeyPress);
 
 // Show floating damage numbers
 function showDamage(targetEl, dmg){
@@ -180,51 +257,60 @@ function chooseAction(type){
 }
 
 // Perform action on enemy
-function targetEnemy(index){
-  if(!currentAction) return;
+function targetEnemy(index) {
+  if (!currentAction) return;
+
   const target = enemies[index];
   const targetEl = document.getElementById("enemies").children[index];
   let dmg = 0;
 
-  if(currentAction==="attack"){ 
-    dmg = 10; 
+  // Attack Action
+  if (currentAction === "attack") {
+    dmg = 10;
     player.sp = Math.min(player.sp + 1, player.maxSp); // Gain 1 SP
     player.energy = Math.min(player.energy + 10, 100); // Gain 10 energy
     showCombatMessage("+1 SP, +10 Energy");
   }
-  else if(currentAction==="skill"){ 
-    if(player.sp<1){ 
-      showCombatMessage("Not enough SP!"); 
-      currentAction=null; 
-      return; 
+  // Skill Action
+  else if (currentAction === "skill") {
+    if (player.sp < 1) {
+      showCombatMessage("Not enough SP!");
+      currentAction = null;
+      return;
     }
-    dmg = 25; 
+    dmg = 25;
     player.sp -= 1;
     player.energy = Math.min(player.energy + 15, 100); // Skills give more energy
     showCombatMessage("-1 SP, +15 Energy");
   }
-  else if(currentAction==="ultimate"){
-    if(player.energy<100){ 
-      showCombatMessage("Ultimate not ready!"); 
-      currentAction=null; 
-      return; 
+  // Ultimate Action
+  else if (currentAction === "ultimate") {
+    if (player.energy < 100) {
+      showCombatMessage("Ultimate not ready!");
+      currentAction = null;
+      return;
     }
-    dmg = 50; 
+    dmg = 50;
     player.energy = 0;
     showCombatMessage("Ultimate used!");
   }
 
   const playerEl = document.getElementById("player-info");
-  animateAttack(playerEl, targetEl, ()=>{
+  animateAttack(playerEl, targetEl, () => {
     target.hp -= dmg;
-    if(target.hp<=0) {
+
+    if (target.hp <= 0) {
       showCombatMessage(target.name + " defeated!");
-      enemies.splice(index,1);
+      enemies.splice(index, 1);  
+      spdOrder = spdOrder.filter(character => character !== target.name);  
     }
+
+    // Update the enemy UI and player UI
     updateEnemiesUI();
     updatePlayerUI();
     showDamage(document.getElementById("enemies").children[index], dmg);
-    currentAction=null;
+    currentAction = null;
+
     nextTurn();
   });
 }
@@ -245,16 +331,33 @@ function enemyAttack(enemy){
   });
 }
 
-// Handle turn order
-function nextTurn(){
+/// Handle turn order
+function nextTurn() {
   spdOrder.push(spdOrder.shift());
+
+  spdOrder = spdOrder.filter(character => {
+    if (character.startsWith("Enemy")) {
+      const enemy = enemies.find(e => e.name === character);
+      return enemy && enemy.hp > 0;
+    }
+    return true;
+  });
+
+  // Update the SPD display
   updateSPD();
 
-  if(spdOrder[0]!=="player"){
-    const enemy = enemies.find(e=>e.name===spdOrder[0]);
-    if(enemy) enemyAttack(enemy);
-    spdOrder.push(spdOrder.shift());
-    updateSPD();
+  if (spdOrder[0] !== "player") {
+    const enemy = enemies.find(e => e.name === spdOrder[0]);
+
+    if (enemy) {
+      enemyAttack(enemy);
+
+      setTimeout(() => {
+        nextTurn();
+      }, 600);
+
+      return;
+    }
   }
 }
 
