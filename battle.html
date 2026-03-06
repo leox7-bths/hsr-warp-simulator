@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HSR-Style Battle Simulator</title>
+<style>
+body { background:#111; color:#fff; font-family:sans-serif; margin:0; overflow:hidden; }
+#battle-ui { position:relative; width:100vw; height:100vh; }
+
+/* SPD / Turn Order */
+#spd-cycle { position:absolute; left:10px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; }
+.spd-char { margin:5px 0; display:flex; align-items:center; }
+.spd-char img { width:50px; height:50px; border-radius:50%; margin-right:5px; }
+
+/* Player Info Panel */
+#player-info { position:absolute; bottom:10px; left:10px; width:300px; height:100px; background:rgba(0,0,0,0.6); border-radius:10px; padding:10px; display:flex; align-items:center; }
+#player-info img { width:60px; height:60px; border-radius:50%; }
+.hp-bar, .sp-bar, .energy-bar { width:200px; height:10px; background:#333; margin-left:10px; border-radius:5px; overflow:hidden; }
+.hp-fill { background:limegreen; height:100%; width:100%; transition:width 0.3s; }
+.sp-fill { background:orange; height:100%; width:0%; transition:width 0.3s; }
+.energy-fill { background:cyan; height:100%; width:0%; transition:width 0.3s; }
+.buff-icons { display:flex; gap:3px; position:absolute; top:-15px; left:10px; }
+
+/* Enemy Panel */
+#enemies { position:absolute; top:10px; right:10px; display:flex; gap:140px; }
+.enemy { width:100px; height:100px; text-align:center; position:relative; cursor:pointer; background:rgba(255,0,0,0.3); border-radius:10px; }
+.enemy img { width:100%; height:100%; border-radius:5px; }
+.enemy .buffs { display:flex; justify-content:center; gap:2px; position:absolute; top:-15px; left:0; right:0; }
+
+/* Action Buttons */
+#actions { position:absolute; bottom:10px; right:10px; display:flex; gap:15px; }
+#actions button { width:90px; height:40px; border-radius:5px; background:#222; color:#fff; cursor:pointer; }
+#actions button:hover { background:#555; }
+
+/* Floating Damage Numbers */
+.damage-number { position:absolute; color:#ff0; font-weight:bold; pointer-events:none; animation:floatUp 0.8s ease-out forwards; }
+@keyframes floatUp { 0% { opacity:1; transform:translateY(0px);} 100% { opacity:0; transform:translateY(-50px);} }
+
+/* Combat Messages */
+#combat-message { 
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 4px #000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+</style>
+</head>
+<body>
+
+<div id="battle-ui">
+  <!-- SPD / Turn Order -->
+  <div id="spd-cycle"></div>
+
+  <!-- Player Info -->
+  <div id="player-info">
+    <img src="https://i.redd.it/what-do-you-think-of-sabers-art-design-in-hsr-v0-5ihki0g6i5ef1.jpg" id="player-pic">
+    <div>
+      <div>HP: <span id="player-hp">100</span>/100</div>
+      <div class="hp-bar"><div id="player-hp-fill" class="hp-fill"></div></div>
+      <div>SP: <span id="player-sp">3</span>/5</div>
+      <div class="sp-bar"><div id="player-sp-fill" class="sp-fill"></div></div>
+      <div>Energy: <span id="player-energy">0</span>/100</div>
+      <div class="energy-bar"><div id="player-energy-fill" class="energy-fill"></div></div>
+      <div class="buff-icons" id="player-buffs"></div>
+    </div>
+  </div>
+
+  <!-- Enemies -->
+  <div id="enemies"></div>
+
+  <!-- Action Buttons -->
+  <div id="actions">
+    <button onclick="chooseAction('attack')">Attack</button>
+    <button onclick="chooseAction('skill')">Skill</button>
+    <button onclick="chooseAction('ultimate')">Ultimate</button>
+  </div>
+</div>
+
+<!-- Combat Message -->
+<div id="combat-message"></div>
+
+<script>
+// Image variables
+const PLAYER_IMG = "https://starrail.honeyhunterworld.com/img/eidolon/the-saga-of-sixteen-winter-days-eidolon_icon.webp";
+const ENEMY_IMG = "https://static.wikia.nocookie.net/houkai-star-rail/images/b/b9/Enemy_Silvermane_Soldier.png";
+
+// Battle data
+let player = { hp:100, maxHp:100, shield:0, energy:0, buffs:[], sp:3, maxSp:5, img: PLAYER_IMG };
+let enemies = [
+  { name:"Enemy1", hp:50, maxHp:50, shield:0, buffs:[], img: ENEMY_IMG },
+  { name:"Enemy2", hp:70, maxHp:70, shield:0, buffs:[], img: ENEMY_IMG }
+];
+let spdOrder = ["player","Enemy1","Enemy2"];
+let currentAction = null;
+
+// Show combat message
+function showCombatMessage(msg, duration=3000){
+  const msgDiv = document.getElementById("combat-message");
+  msgDiv.innerText = msg;
+  msgDiv.style.opacity = "1";
+  setTimeout(()=> { msgDiv.style.opacity = "0"; }, duration);
+}
+
+// Update player UI
+function updatePlayerUI(){
+  document.getElementById("player-pic").src = player.img;
+  document.getElementById("player-hp").innerText = player.hp;
+  document.getElementById("player-hp-fill").style.width = (player.hp/player.maxHp*100)+"%";
+  document.getElementById("player-sp").innerText = player.sp;
+  document.getElementById("player-sp-fill").style.width = (player.sp/player.maxSp*100)+"%";
+  document.getElementById("player-energy").innerText = player.energy;
+  document.getElementById("player-energy-fill").style.width = (player.energy/100*100)+"%";
+  document.getElementById("player-buffs").innerHTML = player.buffs.map(b=>`<span>${b}</span>`).join("");
+}
+
+// Update enemies UI
+function updateEnemiesUI(){
+  const enemiesDiv = document.getElementById("enemies");
+  enemiesDiv.innerHTML = "";
+  enemies.forEach((e,i)=>{
+    const enemyEl = document.createElement("div");
+    enemyEl.className="enemy";
+    enemyEl.innerHTML = `<img src="${e.img}"><div>${e.name}</div><div>HP: ${e.hp}/${e.maxHp}</div><div class="buffs">${e.buffs.join(",")}</div>`;
+    enemyEl.onclick = ()=> targetEnemy(i);
+    enemiesDiv.appendChild(enemyEl);
+  });
+}
+
+// Update SPD / turn order
+function updateSPD(){
+  const spdDiv = document.getElementById("spd-cycle");
+  spdDiv.innerHTML = "";
+  spdOrder.forEach(char=>{
+    let img = char==="player"? player.img : ENEMY_IMG;
+    spdDiv.innerHTML += `<div class="spd-char"><img src="${img}">${char}</div>`;
+  });
+}
+
+// Show floating damage numbers
+function showDamage(targetEl, dmg){
+  const dmgEl = document.createElement("div");
+  dmgEl.className="damage-number";
+  dmgEl.innerText = dmg;
+  targetEl.appendChild(dmgEl);
+  setTimeout(()=> dmgEl.remove(),800);
+}
+
+// Animate attack movement
+function animateAttack(attackerEl, targetEl, callback){
+  const attackerRect = attackerEl.getBoundingClientRect();
+  const targetRect = targetEl.getBoundingClientRect();
+  const deltaX = (targetRect.left + targetRect.width/2) - (attackerRect.left + attackerRect.width/2);
+  const deltaY = (targetRect.top + targetRect.height/2) - (attackerRect.top + attackerRect.height/2);
+  const moveX = deltaX * 0.4;
+  const moveY = deltaY * 0.4;
+
+  attackerEl.style.transition = "all 0.2s";
+  attackerEl.style.transform = `translate(${moveX}px, ${moveY}px)`;
+
+  setTimeout(()=>{
+    attackerEl.style.transform = "translate(0,0)";
+    setTimeout(()=>{
+      attackerEl.style.transition = "";
+      if(callback) callback();
+    }, 200);
+  },200);
+}
+
+// Choose an action
+function chooseAction(type){
+  currentAction = type;
+  showCombatMessage("Select an enemy to target!");
+}
+
+// Perform action on enemy
+function targetEnemy(index){
+  if(!currentAction) return;
+  const target = enemies[index];
+  const targetEl = document.getElementById("enemies").children[index];
+  let dmg = 0;
+
+  if(currentAction==="attack"){ 
+    dmg = 10; 
+    player.sp = Math.min(player.sp + 1, player.maxSp); // Gain 1 SP
+    player.energy = Math.min(player.energy + 10, 100); // Gain 10 energy
+    showCombatMessage("+1 SP, +10 Energy");
+  }
+  else if(currentAction==="skill"){ 
+    if(player.sp<1){ 
+      showCombatMessage("Not enough SP!"); 
+      currentAction=null; 
+      return; 
+    }
+    dmg = 25; 
+    player.sp -= 1;
+    player.energy = Math.min(player.energy + 15, 100); // Skills give more energy
+    showCombatMessage("-1 SP, +15 Energy");
+  }
+  else if(currentAction==="ultimate"){
+    if(player.energy<100){ 
+      showCombatMessage("Ultimate not ready!"); 
+      currentAction=null; 
+      return; 
+    }
+    dmg = 50; 
+    player.energy = 0;
+    showCombatMessage("Ultimate used!");
+  }
+
+  const playerEl = document.getElementById("player-info");
+  animateAttack(playerEl, targetEl, ()=>{
+    target.hp -= dmg;
+    if(target.hp<=0) {
+      showCombatMessage(target.name + " defeated!");
+      enemies.splice(index,1);
+    }
+    updateEnemiesUI();
+    updatePlayerUI();
+    showDamage(document.getElementById("enemies").children[index], dmg);
+    currentAction=null;
+    nextTurn();
+  });
+}
+
+// Enemy attacks player
+function enemyAttack(enemy){
+  const enemyEl = Array.from(document.getElementById("enemies").children)
+    .find(el=>el.querySelector("div").innerText===enemy.name);
+  if(!enemyEl) return;
+
+  animateAttack(enemyEl, document.getElementById("player-info"), ()=>{
+    const dmg = 8;
+    player.hp -= dmg;
+    player.energy = Math.min(player.energy + 5, 100); // Gain energy from taking damage
+    updatePlayerUI();
+    showDamage(document.getElementById("player-info"), dmg);
+    showCombatMessage(enemy.name + " attacks for " + dmg + "!");
+  });
+}
+
+// Handle turn order
+function nextTurn(){
+  spdOrder.push(spdOrder.shift());
+  updateSPD();
+
+  if(spdOrder[0]!=="player"){
+    const enemy = enemies.find(e=>e.name===spdOrder[0]);
+    if(enemy) enemyAttack(enemy);
+    spdOrder.push(spdOrder.shift());
+    updateSPD();
+  }
+}
+
+// Initialize UI
+updatePlayerUI();
+updateEnemiesUI();
+updateSPD();
+</script>
+
+</body>
+</html>
