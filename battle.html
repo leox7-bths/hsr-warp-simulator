@@ -2,370 +2,464 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>HSR-Style Battle Simulator</title>
+<title>Battle Simulator</title>
 <style>
-body { background:#111; color:#fff; font-family:sans-serif; margin:0; overflow:hidden; }
-#battle-ui { position:relative; width:100vw; height:100vh; }
+  * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+  body { background: #0b0e14; margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+  .sim-container { width: 1300px; max-width: 95vw; background: #1a1f2b; border-radius: 32px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid #3d4455; }
 
-/* SPD / Turn Order */
-#spd-cycle { position:absolute; left:10px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; }
-.spd-char { margin:5px 0; display:flex; align-items:center; }
-.spd-char img { width:50px; height:50px; border-radius:50%; margin-right:5px; }
+  /* top bar: turn order (SPD cycle) */
+  .turn-bar { background: #0f1219; border-radius: 60px; padding: 12px 24px; margin-bottom: 24px; border: 1px solid #3f4b62; }
+  .turn-track { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .turn-unit { display: flex; align-items: center; background: #262e3c; border-radius: 40px; padding: 4px 16px 4px 8px; border: 1px solid #4f5e7a; box-shadow: 0 2px 0 #0b0e14; }
+  .turn-unit.current { background: #4a3b22; border-color: #e9c46a; box-shadow: 0 0 10px #f1c40f; }
+  .turn-unit img { width: 36px; height: 36px; border-radius: 50%; background: #2f3a4b; margin-right: 8px; object-fit: cover; border: 2px solid #6d7f9c; }
+  .turn-unit span { color: #f0e9df; font-weight: 600; margin-right: 8px; }
+  .turn-unit small { color: #aab9d4; font-size: 13px; background: #1f2633; padding: 4px 8px; border-radius: 20px; }
 
-/* Player Info Panel */
-#player-info { position:absolute; bottom:10px; left:10px; width:300px; height:100px; background:rgba(0,0,0,0.6); border-radius:10px; padding:10px; display:flex; align-items:center; }
-#player-info img { width:60px; height:60px; border-radius:50%; }
-.hp-bar, .sp-bar, .energy-bar { width:200px; height:10px; background:#333; margin-left:10px; border-radius:5px; overflow:hidden; }
-.hp-fill { background:limegreen; height:100%; width:100%; transition:width 0.3s; }
-.sp-fill { background:orange; height:100%; width:0%; transition:width 0.3s; }
-.energy-fill { background:cyan; height:100%; width:0%; transition:width 0.3s; }
-.buff-icons { display:flex; gap:3px; position:absolute; top:-15px; left:10px; }
+  /* main battlefield: player left, enemies right */
+  .battle-row { display: flex; gap: 24px; flex-wrap: wrap; }
+  .player-panel { flex: 1.2; min-width: 300px; background: #202533; border-radius: 28px; padding: 20px; border: 1px solid #424e67; box-shadow: inset 0 2px 3px #0a0c12; }
+  .enemy-panel { flex: 2; min-width: 500px; background: #1b212b; border-radius: 28px; padding: 20px; border: 1px solid #3d485e; }
 
-/* Enemy Panel */
-#enemies { position:absolute; top:10px; right:10px; display:flex; gap:140px; }
-.enemy { width:100px; height:100px; text-align:center; position:relative; cursor:pointer; background:rgba(255,0,0,0.3); border-radius:10px; }
-.enemy img { width:100%; height:100%; border-radius:5px; }
-.enemy .buffs { display:flex; justify-content:center; gap:2px; position:absolute; top:-15px; left:0; right:0; }
+  /* player card */
+  .player-card { display: flex; gap: 18px; align-items: center; margin-bottom: 16px; background: #2d3443; border-radius: 24px; padding: 16px; border-bottom: 3px solid #e3b35c; }
+  .player-avatar { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #d4af37; object-fit: cover; background: #1f2632; }
+  .stats { flex: 1; }
+  .stat-row { display: flex; align-items: center; margin: 6px 0; gap: 8px; }
+  .stat-label { width: 70px; color: #b9c7e0; }
+  .bar-bg { flex: 1; height: 14px; background: #2b3445; border-radius: 20px; overflow: hidden; }
+  .bar-fill { height: 100%; width: 0%; transition: width 0.2s; }
+  .hp-fill { background: #51d88a; }
+  .sp-fill { background: #f4b740; }
+  .energy-fill { background: #60c6f0; }
+  .buffs { display: flex; gap: 5px; margin-top: 8px; }
+  .buff-tag { background: #414d66; color: #cddcff; padding: 2px 12px; border-radius: 20px; font-size: 13px; border-left: 3px solid gold; }
 
-/* Action Buttons */
-#actions { position:absolute; bottom:10px; right:10px; display:flex; gap:15px; }
-#actions button { width:90px; height:40px; border-radius:5px; background:#222; color:#fff; cursor:pointer; }
-#actions button:hover { background:#555; }
+  /* enemy container */
+  .enemy-list { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .enemy-card { width: 150px; background: #2a3142; border-radius: 24px; padding: 12px 8px; text-align: center; border: 2px solid #5f6f8c; cursor: pointer; transition: 0.1s; position: relative; box-shadow: 0 6px 0 #121722; }
+  .enemy-card.targeted { border-color: #f0c15a; box-shadow: 0 0 0 3px #f4d03f, 0 6px 0 #121722; }
+  .enemy-card img { width: 90px; height: 90px; border-radius: 50%; background: #1f2532; border: 2px solid #6a7b9c; object-fit: cover; }
+  .enemy-hp { background: #3a4157; border-radius: 20px; height: 10px; margin: 8px 10px; overflow: hidden; }
+  .enemy-hp-fill { height: 100%; background: #e8554e; width: 100%; }
+  .enemy-buffs { display: flex; gap: 4px; justify-content: center; min-height: 24px; }
 
-/* Floating Damage Numbers */
-.damage-number { position:absolute; color:#ff0; font-weight:bold; pointer-events:none; animation:floatUp 0.8s ease-out forwards; }
-@keyframes floatUp { 0% { opacity:1; transform:translateY(0px);} 100% { opacity:0; transform:translateY(-50px);} }
+  /* action buttons */
+  .action-bar { display: flex; gap: 20px; margin-top: 24px; justify-content: center; }
+  .action-btn { background: #313a4e; border: none; color: white; font-size: 22px; font-weight: bold; padding: 14px 32px; border-radius: 60px; border-bottom: 5px solid #161c28; cursor: pointer; transition: 0.1s; box-shadow: 0 6px 0 #0f131e; }
+  .action-btn:hover { background: #3f4b64; transform: translateY(-2px); border-bottom-width: 6px; }
+  .action-btn:active { transform: translateY(4px); border-bottom-width: 2px; }
+  .action-btn.attack { border-left: 6px solid #e76d6d; }
+  .action-btn.skill { border-left: 6px solid #f0b27a; }
+  .action-btn.ult { border-left: 6px solid #8eace0; }
 
-/* Combat Messages */
-#combat-message { 
-  position: absolute;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 24px;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 2px 2px 4px #000;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s;
-}
+  /* combat message & damage numbers */
+  .message-area { background: #0e131f; border-radius: 40px; padding: 14px 28px; margin-top: 20px; font-size: 22px; font-weight: 600; color: #f1e3c6; text-align: center; border: 1px solid #556b89; min-height: 68px; }
+  .damage-number { position: fixed; pointer-events: none; color: #fcd35e; font-size: 32px; font-weight: 800; text-shadow: 3px 3px 0 #a02020; z-index: 999; animation: floatPop 0.9s ease-out forwards; }
+  @keyframes floatPop { 0% { opacity: 1; transform: scale(1) translateY(0); } 100% { opacity: 0; transform: scale(1.6) translateY(-90px); } }
 
-/* Target Pointer */
-.target-pointer {
-  position: absolute;
-  top: -10px;
-  left: 0;
-  width: 100%;
-  height: 10px;
-  background-color: #ffd700;
-  border-radius: 5px;
-  animation: pulse 1s infinite alternate;
-}
-
-@keyframes pulse {
-  0% { transform: scale(0.8); opacity: 0.7; }
-  100% { transform: scale(1); opacity: 1; }
-}
+  /* speed hint */
+  .av-hint { color: #95a9ce; font-size: 13px; background: #202838; border-radius: 40px; padding: 8px 16px; margin-top: 12px; text-align: center; border: 1px solid #3a4c69; }
 </style>
 </head>
 <body>
+<div class="sim-container" id="battleSim">
+  <!-- Turn order (AV cycle) -->
+  <div class="turn-bar">
+    <div class="turn-track" id="turnOrder"></div>
+  </div>
 
-<div id="battle-ui">
-  <!-- SPD / Turn Order -->
-  <div id="spd-cycle"></div>
+  <!-- Battlefield -->
+  <div class="battle-row">
+    <!-- Player side -->
+    <div class="player-panel">
+      <div class="player-card" id="playerCard">
+        <img class="player-avatar" id="playerImg" src="https://starrail.honeyhunterworld.com/img/eidolon/the-saga-of-sixteen-winter-days-eidolon_icon.webp" alt="player">
+        <div class="stats">
+          <div class="stat-row"><span class="stat-label">HP</span><div class="bar-bg"><div class="bar-fill hp-fill" id="playerHpFill" style="width:100%"></div></div><span id="playerHpText">100/100</span></div>
+          <div class="stat-row"><span class="stat-label">SP</span><div class="bar-bg"><div class="bar-fill sp-fill" id="playerSpFill" style="width:60%"></div></div><span id="playerSpText">3/5</span></div>
+          <div class="stat-row"><span class="stat-label">Energy</span><div class="bar-bg"><div class="bar-fill energy-fill" id="playerEnergyFill" style="width:0%"></div></div><span id="playerEnergyText">0/100</span></div>
+          <div class="buffs" id="playerBuffs"></div>
+        </div>
+      </div>
+      <div class="av-hint" id="playerAvDisplay">player AV: --</div>
+    </div>
 
-  <!-- Player Info -->
-  <div id="player-info">
-    <img src="https://i.redd.it/what-do-you-think-of-sabers-art-design-in-hsr-v0-5ihki0g6i5ef1.jpg" id="player-pic">
-    <div>
-      <div>HP: <span id="player-hp">100</span>/100</div>
-      <div class="hp-bar"><div id="player-hp-fill" class="hp-fill"></div></div>
-      <div>SP: <span id="player-sp">3</span>/5</div>
-      <div class="sp-bar"><div id="player-sp-fill" class="sp-fill"></div></div>
-      <div>Energy: <span id="player-energy">0</span>/100</div>
-      <div class="energy-bar"><div id="player-energy-fill" class="energy-fill"></div></div>
-      <div class="buff-icons" id="player-buffs"></div>
+    <!-- Enemy side -->
+    <div class="enemy-panel">
+      <div class="enemy-list" id="enemyContainer"></div>
+      <div class="av-hint" id="enemyAvHint">enemy action values update after each turn</div>
     </div>
   </div>
 
-  <!-- Enemies -->
-  <div id="enemies"></div>
-
-  <!-- Action Buttons -->
-  <div id="actions">
-    <button onclick="chooseAction('attack')">Attack</button>
-    <button onclick="chooseAction('skill')">Skill</button>
-    <button onclick="chooseAction('ultimate')">Ultimate</button>
+  <!-- Action buttons -->
+  <div class="action-bar">
+    <button class="action-btn attack" id="btnAttack">ATTACK (Q)</button>
+    <button class="action-btn skill" id="btnSkill">SKILL (E)</button>
+    <button class="action-btn ult" id="btnUlt">ULTIMATE (1)</button>
   </div>
+
+  <!-- Message log -->
+  <div class="message-area" id="combatMessage">Select action, then click enemy</div>
 </div>
 
-<!-- Combat Message -->
-<div id="combat-message"></div>
-
 <script>
-// Image variables
-const PLAYER_IMG = "https://starrail.honeyhunterworld.com/img/eidolon/the-saga-of-sixteen-winter-days-eidolon_icon.webp";
-const ENEMY_IMG = "https://static.wikia.nocookie.net/houkai-star-rail/images/b/b9/Enemy_Silvermane_Soldier.png";
+// player and enemies with speed
+let player = {
+  name: 'player',
+  hp: 2157, maxHp: 2157,
+  sp: 3, maxSp: 5,
+  energy: 0, maxEnergy: 360,
+  speed: 101,
+  img: 'https://starrail.honeyhunterworld.com/img/eidolon/the-saga-of-sixteen-winter-days-eidolon_icon.webp',
+  buffs: [],
+  actionValue: 0,
+  get baseAv() { return 10000 / this.speed; }
+};
 
-// Battle data
-let player = { hp:100, maxHp:100, shield:0, energy:0, buffs:[], sp:3, maxSp:5, img: PLAYER_IMG };
 let enemies = [
-  { name:"Enemy1", hp:50, maxHp:50, shield:0, buffs:[], img: ENEMY_IMG },
-  { name:"Enemy2", hp:50, maxHp:50, shield:0, buffs:[], img: ENEMY_IMG },
-  { name:"Enemy3", hp:50, maxHp:50, shield:0, buffs:[], img: ENEMY_IMG },
-  { name:"Enemy4", hp:50, maxHp:50, shield:0, buffs:[], img: ENEMY_IMG },
-  { name:"Enemy5", hp:70, maxHp:70, shield:0, buffs:[], img: ENEMY_IMG }
+  // { 
+  //   name: 'Voidranger: Reaver lv 50',  
+  //   hp: 3089, 
+  //   maxHp: 3089, 
+  //   speed: 100,  
+  //   img: 'https://static.wikia.nocookie.net/houkai-star-rail/images/f/fc/Enemy_Voidranger_Reaver.png',
+  //   damage: 234,
+  //   buffs: [], 
+  //   actionValue: 0, 
+  //   baseAv: 10000/100 
+  // },
+  { 
+    name: 'Silvermane Soldier lv 50', 
+    hp: 2677, 
+    maxHp: 2677, 
+    speed: 83, 
+    img: 'https://static.wikia.nocookie.net/houkai-star-rail/images/b/b9/Enemy_Silvermane_Soldier.png',
+    damage: 234,
+    buffs: [], 
+    actionValue: 0, 
+    baseAv: 10000/83 
+  },
+  { 
+    name: 'Voidranger: Reaver lv 50',  
+    hp: 3089, 
+    maxHp: 3089, 
+    speed: 100,  
+    img: 'https://static.wikia.nocookie.net/houkai-star-rail/images/f/fc/Enemy_Voidranger_Reaver.png',
+    damage: 234,
+    buffs: [], 
+    actionValue: 0, 
+    baseAv: 10000/100 
+  }
 ];
-let spdOrder = ["player","Enemy1","Enemy2","Enemy3","Enemy4","Enemy5"];
-let currentAction = null;
 
-let currentTargetIndex = 0; // Initially target the first enemy
+let turnOrder = [player, ...enemies];
 
-// Show the target pointer on the selected enemy
-function updateTargetPointer() {
-  document.querySelectorAll('.target-pointer').forEach(pointer => pointer.remove());
-  
-  // Get the target enemy
-  const targetEnemyEl = document.getElementById("enemies").children[currentTargetIndex];
+// Current action state
+let currentActionType = null;
+let targetEnemyIndex = 0;
 
-  // Add target pointer to selected enemy
-  const targetPointer = document.createElement("div");
-  targetPointer.className = "target-pointer";
-  targetEnemyEl.appendChild(targetPointer);
+function ceilAv(val) {
+  return Math.ceil(val);
 }
 
-// Handle keyboard input for target switching and actions
-function handleKeyPress(event) {
-  if (event.key === "d") {  // Move target right
-    currentTargetIndex = (currentTargetIndex + 1) % enemies.length;
-    updateTargetPointer();
-  }
-  if (event.key === "a") {  // Move target left
-    currentTargetIndex = (currentTargetIndex - 1 + enemies.length) % enemies.length;
-    updateTargetPointer();
-  }
-
-  if (event.key === "q") {  // Attack
-    chooseAction("attack");
-    targetEnemy(currentTargetIndex);
-  }
-  if (event.key === "e") {  // Skill
-    chooseAction("skill");
-    targetEnemy(currentTargetIndex);
-  }
-  if (event.key === "1") {  // Ultimate
-    chooseAction("ultimate");
-    targetEnemy(currentTargetIndex);
-  }
+function refreshTurnOrder() {
+  turnOrder.sort((a, b) => a.actionValue - b.actionValue);
+  renderTurnOrder();
 }
 
-// Show combat message
-function showCombatMessage(msg, duration = 3000) {
-  const msgDiv = document.getElementById("combat-message");
-  msgDiv.innerText = msg;
-  msgDiv.style.opacity = "1";
-  setTimeout(() => { msgDiv.style.opacity = "0"; }, duration);
+// render turn list
+function renderTurnOrder() {
+  const container = document.getElementById('turnOrder');
+  container.innerHTML = '';
+  turnOrder.forEach((unit, idx) => {
+    const div = document.createElement('div');
+    div.className = `turn-unit ${idx === 0 ? 'current' : ''}`;
+    const imgSrc = unit.img || (unit.name === 'player' ? player.img : enemies[0]?.img);
+    div.innerHTML = `<img src="${imgSrc}" alt=""><span>${unit.name === 'player' ? 'Trailblazer' : unit.name}</span><small>AV ${Math.round(unit.actionValue * 10) / 10}</small>`;
+    container.appendChild(div);
+  });
+  // update player AV hint
+  document.getElementById('playerAvDisplay').innerHTML = `player AV: ${player.actionValue.toFixed(1)} | base +${player.baseAv.toFixed(1)}`;
+}
+
+// damage float
+function showDamage(targetElement, amount, isHeal = false) {
+  const dmg = document.createElement('div');
+  dmg.className = 'damage-number';
+  dmg.style.left = targetElement.getBoundingClientRect().left + 40 + 'px';
+  dmg.style.top = targetElement.getBoundingClientRect().top + 20 + 'px';
+  dmg.style.color = isHeal ? '#6fef6f' : '#ffb87c';
+  dmg.innerText = amount;
+  document.body.appendChild(dmg);
+  setTimeout(() => dmg.remove(), 800);
+}
+
+// Message
+function setMessage(msg) {
+  document.getElementById('combatMessage').innerText = msg;
 }
 
 // Update player UI
-function updatePlayerUI(){
-  document.getElementById("player-pic").src = player.img;
-  document.getElementById("player-hp").innerText = player.hp;
-  document.getElementById("player-hp-fill").style.width = (player.hp/player.maxHp*100)+"%";
-  document.getElementById("player-sp").innerText = player.sp;
-  document.getElementById("player-sp-fill").style.width = (player.sp/player.maxSp*100)+"%";
-  document.getElementById("player-energy").innerText = player.energy;
-  document.getElementById("player-energy-fill").style.width = (player.energy/100*100)+"%";
-  document.getElementById("player-buffs").innerHTML = player.buffs.map(b=>`<span>${b}</span>`).join("");
+function refreshPlayerUI() {
+  document.getElementById('playerHpFill').style.width = (player.hp / player.maxHp * 100) + '%';
+  document.getElementById('playerHpText').innerText = `${player.hp}/${player.maxHp}`;
+  document.getElementById('playerSpFill').style.width = (player.sp / player.maxSp * 100) + '%';
+  document.getElementById('playerSpText').innerText = `${player.sp}/${player.maxSp}`;
+  document.getElementById('playerEnergyFill').style.width = (player.energy / player.maxEnergy * 100) + '%';
+  document.getElementById('playerEnergyText').innerText = `${player.energy}/${player.maxEnergy}`;
+  let buffHtml = '';
+  player.buffs.forEach(b => buffHtml += `<span class="buff-tag">${b}</span>`);
+  document.getElementById('playerBuffs').innerHTML = buffHtml;
 }
 
-// Update enemies UI
-function updateEnemiesUI(){
-  const enemiesDiv = document.getElementById("enemies");
-  enemiesDiv.innerHTML = "";
-  enemies.forEach((e,i)=>{
-    const enemyEl = document.createElement("div");
-    enemyEl.className="enemy";
-    enemyEl.innerHTML = `<img src="${e.img}"><div>${e.name}</div><div>HP: ${e.hp}/${e.maxHp}</div><div class="buffs">${e.buffs.join(",")}</div>`;
-    enemyEl.onclick = ()=> targetEnemy(i);
-    enemiesDiv.appendChild(enemyEl);
-  });
-}
-
-// Update SPD / turn order
-function updateSPD() {
-  const spdDiv = document.getElementById("spd-cycle");
-  spdDiv.innerHTML = "";
-
-  spdOrder.forEach((char, i) => {
-    let img = char === "player" ? player.img : ENEMY_IMG;
-
-    const charDiv = document.createElement("div");
-    charDiv.className = "spd-char";
-
-    charDiv.innerHTML = `
-      <span style="width:20px; text-align:right; margin-right:5px; color:#aaa;">
-        ${i + 1}.
-      </span>
-      <img src="${img}">
-      <span>${char}</span>
+// Enemies UI
+function refreshEnemyUI() {
+  const container = document.getElementById('enemyContainer');
+  container.innerHTML = '';
+  enemies.forEach((enemy, idx) => {
+    const card = document.createElement('div');
+    card.className = `enemy-card ${idx === targetEnemyIndex ? 'targeted' : ''}`;
+    card.setAttribute('data-enemy-idx', idx);
+    card.onclick = () => { targetEnemyIndex = idx; refreshEnemyUI(); };
+    const hpPercent = (enemy.hp / enemy.maxHp) * 100;
+    let buffHtml = '';
+    enemy.buffs.forEach(b => buffHtml += `<span class="buff-tag" style="font-size:11px;">${b}</span>`);
+    card.innerHTML = `
+      <img src="${enemy.img}" onerror="this.src='https://starrail.honeyhunterworld.com/img/eidolon/the-saga-of-sixteen-winter-days-eidolon_icon.webp'">
+      <div style="font-weight:bold;">${enemy.name}</div>
+      <div class="enemy-hp"><div class="enemy-hp-fill" style="width:${hpPercent}%;"></div></div>
+      <div style="font-size:13px;">${enemy.hp}/${enemy.maxHp}</div>
+      <div class="enemy-buffs">${buffHtml}</div>
+      <small style="color:#aac">AV ${enemy.actionValue.toFixed(1)}</small>
     `;
-
-    spdDiv.appendChild(charDiv);
+    container.appendChild(card);
   });
-  updateTargetPointer();
 }
 
-// Bind keypress event listener
-document.addEventListener("keydown", handleKeyPress);
+function runTurn() {
+  if (turnOrder.length === 0) return;
+  // Whoever has smallest AV acts
+  turnOrder.sort((a,b) => a.actionValue - b.actionValue);
+  const active = turnOrder[0];
 
-// Show floating damage numbers
-function showDamage(targetEl, dmg){
-  const dmgEl = document.createElement("div");
-  dmgEl.className="damage-number";
-  dmgEl.innerText = dmg;
-  targetEl.appendChild(dmgEl);
-  setTimeout(()=> dmgEl.remove(),800);
+  // Show message
+  if (active.name === 'player') {
+    setMessage('Your turn! Choose action & click enemy (A/D to switch target).');
+  } else {
+    setMessage(`${active.name} is preparing...`);
+
+    setTimeout(() => enemyAct(active), 600);
+  }
+  renderTurnOrder();
 }
 
-// Animate attack movement
-function animateAttack(attackerEl, targetEl, callback){
-  const attackerRect = attackerEl.getBoundingClientRect();
-  const targetRect = targetEl.getBoundingClientRect();
-  const deltaX = (targetRect.left + targetRect.width/2) - (attackerRect.left + attackerRect.width/2);
-  const deltaY = (targetRect.top + targetRect.height/2) - (attackerRect.top + attackerRect.height/2);
-  const moveX = deltaX * 0.4;
-  const moveY = deltaY * 0.4;
+function enemyAct(enemyObj) {
+  if (enemyObj.hp <= 0) {
+    runTurn();
+    return;
+  }
 
-  attackerEl.style.transition = "all 0.2s";
-  attackerEl.style.transform = `translate(${moveX}px, ${moveY}px)`;
+  const enemyCard = Array.from(document.querySelectorAll('.enemy-card')).find(
+    (el, idx) => enemies[idx] && enemies[idx].name === enemyObj.name
+  );
+  const playerCardDiv = document.getElementById('playerCard');
+  if (enemyCard) {
+    enemyCard.style.transform = 'translateX(20px)';
+    setTimeout(() => enemyCard.style.transform = '', 200);
+  }
+  setTimeout(() => {
+    const dmg = enemyObj.damage || 8; // Fallback to 8 if damage not defined
+    
+    player.hp = Math.max(0, player.hp - dmg);
+    player.energy = Math.min(player.maxEnergy, player.energy + 5);
+    refreshPlayerUI();
+    showDamage(playerCardDiv, dmg);
+    setMessage(`${enemyObj.name} dealt ${dmg} damage!`);
 
-  setTimeout(()=>{
-    attackerEl.style.transform = "translate(0,0)";
-    setTimeout(()=>{
-      attackerEl.style.transition = "";
-      if(callback) callback();
-    }, 200);
-  },200);
+    const actedAV = enemyObj.actionValue;
+    turnOrder.forEach(unit => { unit.actionValue -= actedAV; });
+    enemyObj.actionValue = ceilAv(enemyObj.baseAv);
+
+    for (let i = enemies.length-1; i>=0; i--) {
+      if (enemies[i].hp <= 0) {
+        const dead = enemies[i];
+        turnOrder = turnOrder.filter(u => u.name !== dead.name);
+        enemies.splice(i,1);
+      }
+    }
+    // if player dead?
+    if (player.hp <= 0) {
+      setMessage('Defeat...');
+      return;
+    }
+
+    refreshEnemyUI();
+    refreshTurnOrder();
+    // Next turn
+    runTurn();
+  }, 300);
 }
 
-// Choose an action
-function chooseAction(type){
-  currentAction = type;
-  showCombatMessage("Select an enemy to target!");
-}
+// Player action
+function playerAction(act) {
+  if (enemies.length === 0) { setMessage('All enemies defeated!'); return; }
+  const target = enemies[targetEnemyIndex];
+  if (!target) return;
 
-// Perform action on enemy
-function targetEnemy(index) {
-  if (!currentAction) return;
+  // Energy/SP checks
+  if (act === 'skill' && player.sp < 1) { setMessage('Not enough SP!'); return; }
+  if (act === 'ultimate' && player.energy < player.maxEnergy) { setMessage('Ultimate not ready!'); return; }
 
-  const target = enemies[index];
-  const targetEl = document.getElementById("enemies").children[index];
   let dmg = 0;
+  let spChange = 0;
+  let energyGain = 0;
+  let message = '';
 
-  // Attack Action
-  if (currentAction === "attack") {
-    dmg = 10;
-    player.sp = Math.min(player.sp + 1, player.maxSp); // Gain 1 SP
-    player.energy = Math.min(player.energy + 10, 100); // Gain 10 energy
-    showCombatMessage("+1 SP, +10 Energy");
-  }
-  // Skill Action
-  else if (currentAction === "skill") {
-    if (player.sp < 1) {
-      showCombatMessage("Not enough SP!");
-      currentAction = null;
-      return;
-    }
-    dmg = 25;
-    player.sp -= 1;
-    player.energy = Math.min(player.energy + 15, 100); // Skills give more energy
-    showCombatMessage("-1 SP, +15 Energy");
-  }
-  // Ultimate Action
-  else if (currentAction === "ultimate") {
-    if (player.energy < 100) {
-      showCombatMessage("Ultimate not ready!");
-      currentAction = null;
-      return;
-    }
-    dmg = 50;
-    player.energy = 0;
-    showCombatMessage("Ultimate used!");
+  switch (act) {
+    case 'attack':
+      dmg = 661;
+      spChange = 1;
+      energyGain = 30;
+      message = 'Attack! +1 SP, +10 energy';
+      break;
+    case 'skill':
+      dmg = 991;
+      spChange = -1;
+      energyGain = 30;
+      message = 'Skill! -1 SP, +15 energy';
+      break;
+    case 'ultimate':
+      dmg = 1851;
+      energyGain = 0;
+      player.energy = 0;
+      message = 'ULTIMATE! 50 damage';
+      break;
   }
 
-  const playerEl = document.getElementById("player-info");
-  animateAttack(playerEl, targetEl, () => {
-    target.hp -= dmg;
+  target.hp -= dmg;
+  if (target.hp < 0) target.hp = 0;
 
-    if (target.hp <= 0) {
-      showCombatMessage(target.name + " defeated!");
-      enemies.splice(index, 1);  
-      spdOrder = spdOrder.filter(character => character !== target.name);  
+  if (act !== 'ultimate') {
+    player.sp = Math.min(player.maxSp, player.sp + spChange);
+    player.energy = Math.min(player.maxEnergy, player.energy + energyGain);
+  }
+  refreshPlayerUI();
+
+  const enemyElements = document.querySelectorAll('.enemy-card');
+  if (enemyElements[targetEnemyIndex]) showDamage(enemyElements[targetEnemyIndex], dmg);
+
+  setMessage(message + (target.hp <= 0 ? ` ${target.name} defeated!` : ''));
+
+  const currentPlayerAV = player.actionValue;
+
+  turnOrder.forEach(u => u.actionValue -= currentPlayerAV);
+
+  player.actionValue = ceilAv(player.baseAv);
+
+  // remove dead enemies
+  for (let i = enemies.length-1; i>=0; i--) {
+    if (enemies[i].hp <= 0) {
+      const deadEnemy = enemies[i];
+      turnOrder = turnOrder.filter(u => u.name !== deadEnemy.name);
+      enemies.splice(i,1);
     }
+  }
+  // if enemies all dead
+  if (enemies.length === 0) {
+    setMessage('Victory!');
+    refreshEnemyUI();
+    refreshTurnOrder();
+    return;
+  }
 
-    // Update the enemy UI and player UI
-    updateEnemiesUI();
-    updatePlayerUI();
-    showDamage(document.getElementById("enemies").children[index], dmg);
-    currentAction = null;
+  if (targetEnemyIndex >= enemies.length) targetEnemyIndex = enemies.length - 1;
 
-    nextTurn();
-  });
+  refreshEnemyUI();
+  refreshTurnOrder();
+
+  runTurn();
 }
 
-// Enemy attacks player
-function enemyAttack(enemy){
-  const enemyEl = Array.from(document.getElementById("enemies").children)
-    .find(el=>el.querySelector("div").innerText===enemy.name);
-  if(!enemyEl) return;
+// Buttons & keyboard
+document.getElementById('btnAttack').onclick = () => { currentActionType = 'attack'; setMessage('Attack ready. Click enemy (or A/D + Q).'); };
+document.getElementById('btnSkill').onclick = () => { 
+  if (player.sp < 1) { setMessage('Not enough SP!'); return; }
+  currentActionType = 'skill'; setMessage('Skill ready.'); 
+};
+document.getElementById('btnUlt').onclick = () => { 
+  if (player.energy < player.maxEnergy) { setMessage('Ultimate not ready'); return; }
+  currentActionType = 'ultimate'; setMessage('Ultimate charged!'); 
+};
 
-  animateAttack(enemyEl, document.getElementById("player-info"), ()=>{
-    const dmg = 8;
-    player.hp -= dmg;
-    player.energy = Math.min(player.energy + 5, 100); // Gain energy from taking damage
-    updatePlayerUI();
-    showDamage(document.getElementById("player-info"), dmg);
-    showCombatMessage(enemy.name + " attacks for " + dmg + "!");
-  });
-}
-
-/// Handle turn order
-function nextTurn() {
-  spdOrder.push(spdOrder.shift());
-
-  spdOrder = spdOrder.filter(character => {
-    if (character.startsWith("Enemy")) {
-      const enemy = enemies.find(e => e.name === character);
-      return enemy && enemy.hp > 0;
+// target switching & action confirm with keys
+window.addEventListener('keydown', (e) => {
+  const key = e.key.toLowerCase();
+  if (key === 'a' || key === 'd') {
+    e.preventDefault();
+    if (enemies.length === 0) return;
+    if (key === 'a') targetEnemyIndex = (targetEnemyIndex - 1 + enemies.length) % enemies.length;
+    else if (key === 'd') targetEnemyIndex = (targetEnemyIndex + 1) % enemies.length;
+    refreshEnemyUI();
+    setMessage(`Target: ${enemies[targetEnemyIndex].name}`);
+  } else if (key === 'q' || key === 'e' || key === '1') {
+    e.preventDefault();
+    // Map keys to action types
+    if (key === 'q') currentActionType = 'attack';
+    else if (key === 'e') {
+      if (player.sp < 1) { setMessage('Not enough SP'); return; }
+      currentActionType = 'skill';
     }
-    return true;
-  });
-
-  // Update the SPD display
-  updateSPD();
-
-  if (spdOrder[0] !== "player") {
-    const enemy = enemies.find(e => e.name === spdOrder[0]);
-
-    if (enemy) {
-      enemyAttack(enemy);
-
-      setTimeout(() => {
-        nextTurn();
-      }, 600);
-
-      return;
+    else if (key === '1') {
+      if (player.energy < player.maxEnergy) { setMessage('Ult not ready'); return; }
+      currentActionType = 'ultimate';
     }
+    if (currentActionType && enemies.length > 0) {
+      playerAction(currentActionType);
+      currentActionType = null;
+    } else if (enemies.length === 0) setMessage('No enemies left');
   }
-}
+});
 
-// Initialize UI
-updatePlayerUI();
-updateEnemiesUI();
-updateSPD();
+// click on enemy after selecting action
+document.addEventListener('click', (e) => {
+  const enemyCard = e.target.closest('.enemy-card');
+  if (!enemyCard) return;
+  if (!currentActionType) { setMessage('First choose action (Q/E/1 or buttons)'); return; }
+  const idx = parseInt(enemyCard.dataset.enemyIdx);
+  if (!isNaN(idx) && enemies[idx]) {
+    targetEnemyIndex = idx;
+    refreshEnemyUI();
+    playerAction(currentActionType);
+    currentActionType = null;
+  }
+});
+
+// Initialize AV
+player.actionValue = 100;
+enemies[0].actionValue = 90;
+enemies[1].actionValue = 90;
+//enemies[2].actionValue = 90;
+
+// Ensure baseAv for enemies:
+enemies[0].baseAv = 10000/90;
+enemies[1].baseAv = 10000/90;
+//enemies[2].baseAv = 10000/90;
+turnOrder = [
+  player, 
+  enemies[0], 
+  enemies[1], 
+  //enemies[2]
+];
+turnOrder.forEach(u => u.actionValue -= 30);
+player.actionValue = 0;
+
+refreshPlayerUI();
+refreshEnemyUI();
+refreshTurnOrder();
+setMessage('Battle start! Player turn. (A/D target, Q attack, E skill, 1 ult)');
+setTimeout(() => runTurn(), 200);
 </script>
-
 </body>
 </html>
